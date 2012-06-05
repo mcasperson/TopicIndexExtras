@@ -9,7 +9,6 @@ import org.jboss.errai.bus.client.api.Message;
 import org.jboss.errai.bus.client.api.RemoteCallback;
 import org.jboss.errai.enterprise.client.jaxrs.api.RestClient;
 import org.jboss.errai.ioc.client.api.EntryPoint;
-import org.vectomatic.file.Blob;
 import org.vectomatic.file.File;
 import org.vectomatic.file.FileList;
 import org.vectomatic.file.FileReader;
@@ -19,17 +18,22 @@ import org.vectomatic.file.events.LoadEndHandler;
 
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
+import com.google.gwt.regexp.shared.MatchResult;
+import com.google.gwt.regexp.shared.RegExp;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.redhat.topicindex.rest.entities.interfaces.RESTImageV1;
-import com.redhat.topicindex.rest.entities.interfaces.RESTTopicV1;
 
 @EntryPoint
 public class App
 {
+	private static final String RESTIMAGEV1_FILENAME_RE = "\"filename\":\"(.*?)\"";
+	private static final RegExp RESTIMAGEV1_FILENAME_EXP = RegExp.compile(RESTIMAGEV1_FILENAME_RE);
+	private static final String RESTIMAGEV1_ID_RE = "\"id\":(\\d+)";
+	private static final RegExp RESTIMAGEV1_ID_EXP = RegExp.compile(RESTIMAGEV1_ID_RE);
 	private static final String REST_SERVER = "http://localhost:8080/TopicIndex/seam/resource/rest";
 	// private static final String REST_SERVER = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
 
@@ -76,6 +80,30 @@ public class App
 
 	private void processImage(final File file, final StringBuilder results, final boolean lastFile)
 	{
+		final RemoteCallback<String> genericSuccessCallback = new RemoteCallback<String>()
+		{
+			@Override
+			public void callback(final String retValue)
+			{
+				/* temp workaround for bug at https://community.jboss.org/thread/200710?tstart=0 */				
+				final MatchResult filenameMatcher = RESTIMAGEV1_FILENAME_EXP.exec(retValue);
+				final boolean filenameMatchFound = RESTIMAGEV1_FILENAME_EXP.test(retValue);
+				
+				final MatchResult idMatcher = RESTIMAGEV1_ID_EXP.exec(retValue);
+				final boolean idMatchFound = RESTIMAGEV1_ID_EXP.test(retValue);
+				
+				if (filenameMatchFound && idMatchFound)
+				{				
+					final String filename = filenameMatcher.getGroup(1);
+					final String id = idMatcher.getGroup(1);
+					
+					results.append(id + ": " + filename + "\n");
+					if (lastFile)
+						resultsTextArea.setText(results.toString());
+				}
+			}
+		};
+
 		final RemoteCallback<RESTImageV1> successCallback = new RemoteCallback<RESTImageV1>()
 		{
 			@Override
@@ -98,27 +126,8 @@ public class App
 				return true;
 			}
 		};
-		
-		final RemoteCallback<RESTTopicV1> topicSuccessCallback = new RemoteCallback<RESTTopicV1>()
-		{
-			@Override
-			public void callback(final RESTTopicV1 retValue)
-			{
-				Window.alert(retValue.getTitle());
-			}
-		};
 
-		final ErrorCallback topicErrorCallback = new ErrorCallback()
-		{
-			@Override
-			public boolean error(Message message, Throwable throwable)
-			{
-				Window.alert("Doh!");
-				return true;
-			}
-		};
-
-		final RESTInterfaceV1 restMethod = RestClient.create(RESTInterfaceV1.class, topicSuccessCallback, topicErrorCallback);
+		final RESTInterfaceV1 restMethod = RestClient.create(RESTInterfaceV1.class, genericSuccessCallback, errorCallback);
 
 		final FileReader reader = new FileReader();
 		reader.addLoadEndHandler(new LoadEndHandler()
@@ -126,14 +135,14 @@ public class App
 			@Override
 			public void onLoadEnd(LoadEndEvent event)
 			{
-				
+
 				final String result = reader.getStringResult();
 				final byte[] buffer = getByteArray(result, 1);
 
 				final RESTImageV1 image = new RESTImageV1();
 				image.explicitSetImageData(buffer);
 				image.explicitSetFilename(file.getName());
-								
+
 				try
 				{
 					restMethod.createJSONImage("", image);
@@ -148,22 +157,10 @@ public class App
 				}
 			}
 		});
-		
+
 		reader.readAsBinaryString(file);
 	}
 
-	public static List<Byte> getBytes(final String string, final int bytesPerChar)
-	{
-		char[] chars = string.toCharArray();
-		List<Byte> toReturn = new ArrayList<Byte>(chars.length * bytesPerChar);
-		for (int i = 0; i < chars.length; i++)
-		{
-			for (int j = 0; j < bytesPerChar; j++)
-				toReturn.add((byte) (chars[i] >>> (8 * (bytesPerChar - 1 - j))));
-		}
-		return toReturn;
-	}
-	
 	public static byte[] getByteArray(final String string, final int bytesPerChar)
 	{
 		char[] chars = string.toCharArray();

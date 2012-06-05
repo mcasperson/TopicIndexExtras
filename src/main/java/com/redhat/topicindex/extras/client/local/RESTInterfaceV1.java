@@ -1174,7 +1174,7 @@ public interface RESTInterfaceV1
 	@Path("/image/post/json")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes({ MediaType.APPLICATION_JSON })
-	public RESTImageV1 createJSONImage(@QueryParam("expand") final String expand, final RESTImageV1 dataObject) throws InvalidParameterException, InternalProcessingException;
+	public String createJSONImage(@QueryParam("expand") final String expand, final RESTImageV1 dataObject) throws InvalidParameterException, InternalProcessingException;
 
 	@POST
 	@Path("/images/post/json")
