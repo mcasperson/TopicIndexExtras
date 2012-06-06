@@ -49,6 +49,9 @@ public class App
 	final Button newLangButton = new Button("New Language");
 	final Progressbar progress = new Progressbar();
 
+	/**
+	 * The GWT entry point
+	 */
 	@PostConstruct
 	public void init()
 	{
@@ -56,6 +59,12 @@ public class App
 		RestClient.setApplicationRoot(REST_SERVER);
 		RestClient.setJacksonMarshallingActive(true);
 		
+		/* Build the user interface */
+		buildUI();
+	}
+	
+	private void buildUI()
+	{
 		progress.setVisible(false);
 		finalResults.setReadOnly(true);
 		finalResults.setWidth("500px");
@@ -121,6 +130,10 @@ public class App
 		RootPanel.get().add(layoutGrid);
 	}
 	
+	/**
+	 * Set the UI after the uploads are done
+	 * @param results The results to be displayed to the user.
+	 */
 	private void uploadDone(final StringBuilder results)
 	{
 		finalResults.setText(results.toString());
@@ -129,6 +142,17 @@ public class App
 		setEnabled(true);
 	}
 
+	/**
+	 * This method looks through the imageUploadBlocks, and the files contained by the 
+	 * FileUploadExt in the block, and uploads the images to the REST server.
+	 * 
+	 * It is called recursively by the asynchronous REST callbacks, to provide
+	 * the appearance of a synchronous upload service.
+	 * 
+	 * @param blockIndex The index of the block to process
+	 * @param fileIndex The index of the file to process
+	 * @param results The results of the file uploads
+	 */
 	private void processImage(final int blockIndex, final int fileIndex, final StringBuilder results)
 	{
 		/* there are no more blocks to process, so enable the UI and return */
@@ -149,8 +173,8 @@ public class App
 		/* There are files to process, process them and then move to the next file */
 		else
 		{
-			final float blockLevelProgress = ((float)blockIndex + 1) / this.imageUploadBlocks.size();
-			final float fileLevelProgress = ((float)fileIndex + 1) / data.getUpload().getFiles().getLength() / this.imageUploadBlocks.size();
+			final float blockLevelProgress = (float)blockIndex / this.imageUploadBlocks.size();
+			final float fileLevelProgress = (float)fileIndex / data.getUpload().getFiles().getLength() / this.imageUploadBlocks.size();
 			
 			progress.setPercentDone((int) ((blockLevelProgress + fileLevelProgress)  * 100));
 			
@@ -234,6 +258,10 @@ public class App
 		}
 	}
 	
+	/**
+	 * Set the state of the UI elements
+	 * @param enabled true if the elements are to be enabled, false otherwise
+	 */
 	private void setEnabled(final boolean enabled)
 	{
 		for (final ImageUploadData block : imageUploadBlocks)
@@ -247,6 +275,12 @@ public class App
 		this.newLangButton.setEnabled(enabled);
 	}
 
+	/**
+	 * Replacement for String.toByteArray()
+	 * @param string The string to convert
+	 * @param bytesPerChar The number of bytes per character
+	 * @return the same as the standard Java String.toByteArray() method
+	 */
 	public static byte[] getByteArray(final String string, final int bytesPerChar)
 	{
 		char[] chars = string.toCharArray();
