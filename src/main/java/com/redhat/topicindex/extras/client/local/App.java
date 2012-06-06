@@ -149,7 +149,10 @@ public class App
 		/* There are files to process, process them and then move to the next file */
 		else
 		{
-			progress.setPercentDone((this.imageUploadBlocks.size() / blockIndex + (fileIndex / data.getUpload().getFiles().getLength() / this.imageUploadBlocks.size()))  * 100);
+			final float blockLevelProgress = blockIndex / this.imageUploadBlocks.size();
+			final float fileLevelProgress = fileIndex / data.getUpload().getFiles().getLength() / this.imageUploadBlocks.size();
+			
+			progress.setPercentDone((int) ((blockLevelProgress + fileLevelProgress)  * 100));
 			
 			final File file = data.getUpload().getFiles().getItem(fileIndex);
 
