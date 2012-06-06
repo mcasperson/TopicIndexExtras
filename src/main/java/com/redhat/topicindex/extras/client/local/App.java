@@ -29,6 +29,7 @@ import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.redhat.topicindex.rest.entities.interfaces.RESTImageV1;
+import com.smartgwt.client.widgets.Progressbar;
 
 @EntryPoint
 public class App
@@ -46,6 +47,7 @@ public class App
 	private final TextArea finalResults = new TextArea(); 
 	final Button upload = new Button("Upload");
 	final Button newLangButton = new Button("New Language");
+	final Progressbar progress = new Progressbar();
 
 	@PostConstruct
 	public void init()
@@ -54,6 +56,7 @@ public class App
 		RestClient.setApplicationRoot(REST_SERVER);
 		RestClient.setJacksonMarshallingActive(true);
 		
+		progress.setVisible(false);
 		finalResults.setReadOnly(true);
 		finalResults.setWidth("500px");
 		finalResults.setHeight("300px");
@@ -80,7 +83,6 @@ public class App
 
 		final HorizontalPanel horizontalLayout = new HorizontalPanel();
 		layoutGrid.setWidget(3, 0, horizontalLayout);
-
 		
 		newLangButton.addClickHandler(new ClickHandler()
 		{
@@ -93,7 +95,6 @@ public class App
 			}
 		});
 		horizontalLayout.add(newLangButton);
-
 		
 		horizontalLayout.add(upload);
 
@@ -108,10 +109,14 @@ public class App
 				finalResults.setText("");
 				finalResults.setVisible(false);
 				
+				progress.setVisible(true);
+				
 				final StringBuilder results = new StringBuilder();
 				processImage(0, 0, results);
 			}
 		});
+		
+		horizontalLayout.add(progress);
 
 		RootPanel.get().add(layoutGrid);
 	}
@@ -120,6 +125,7 @@ public class App
 	{
 		finalResults.setText(results.toString());
 		finalResults.setVisible(true);
+		progress.setVisible(false);
 		setEnabled(true);
 	}
 
@@ -143,7 +149,8 @@ public class App
 		/* There are files to process, process them and then move to the next file */
 		else
 		{
-
+			progress.setPercentDone((this.imageUploadBlocks.size() / blockIndex + (fileIndex / data.getUpload().getFiles().getLength() / this.imageUploadBlocks.size()))  * 100);
+			
 			final File file = data.getUpload().getFiles().getItem(fileIndex);
 
 			final RemoteCallback<String> genericSuccessCallback = new RemoteCallback<String>()
@@ -160,7 +167,7 @@ public class App
 
 					if (filenameMatchFound && idMatchFound)
 					{
-						final String filename = prefix.getText() + filenameMatcher.getGroup(1);
+						final String filename = filenameMatcher.getGroup(1);
 						final String id = idMatcher.getGroup(1);
 
 						results.append(id + ": " + filename + "\n");
@@ -206,7 +213,7 @@ public class App
 
 					final RESTImageV1 image = new RESTImageV1();
 					image.explicitSetImageData(buffer);
-					image.explicitSetFilename(file.getName());
+					image.explicitSetFilename(prefix.getText()+ file.getName());
 
 					try
 					{
