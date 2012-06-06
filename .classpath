@@ -10,5 +10,6 @@
 	</classpathentry>
 	<classpathentry kind="lib" path="lib/redhatcommonutils.jar"/>
 	<classpathentry kind="lib" path="lib/lib-gwt-file-0.3.jar"/>
+	<classpathentry kind="lib" path="lib/gwt-incubator-20101117-r1766.jar"/>
 	<classpathentry kind="output" path="src/main/webapp/WEB-INF/classes"/>
 </classpath>
