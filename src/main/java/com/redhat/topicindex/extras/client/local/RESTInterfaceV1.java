@@ -1180,7 +1180,7 @@ public interface RESTInterfaceV1
 	@Path("/images/post/json")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes({ MediaType.APPLICATION_JSON })
-	public BaseRestCollectionV1<RESTImageV1> createJSONImages(@QueryParam("expand") final String expand, final BaseRestCollectionV1<RESTImageV1> dataObjects) throws InvalidParameterException, InternalProcessingException;
+	public String createJSONImages(@QueryParam("expand") final String expand, final BaseRestCollectionV1<RESTImageV1> dataObjects) throws InvalidParameterException, InternalProcessingException;
 
 	@DELETE
 	@Path("/image/delete/json/{id}")

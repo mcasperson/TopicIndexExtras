@@ -293,9 +293,11 @@ public class App
 			final int progressValue = (int) ((float) fileIndex / fileNames.size() * 100);
 			progress.setPercentDone(progressValue);
 			
+			System.out.println("Progress: " + progressValue);
+			
 			final RESTImageV1 image = new RESTImageV1();
 			image.setAddItem(true);
-			image.setLanguageImages_OTM(new BaseRestCollectionV1<RESTLanguageImageV1>());
+			image.explicitSetLanguageImages_OTM(new BaseRestCollectionV1<RESTLanguageImageV1>());
 			images.add(image);
 			processBlock(0, fileIndex, fileNames, results, image, images);
 		}
