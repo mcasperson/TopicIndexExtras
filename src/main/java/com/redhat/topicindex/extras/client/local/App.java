@@ -11,6 +11,7 @@ import org.jboss.errai.enterprise.client.jaxrs.api.RestClient;
 import org.jboss.errai.ioc.client.api.EntryPoint;
 import org.vectomatic.file.File;
 import org.vectomatic.file.FileReader;
+import org.vectomatic.file.events.ErrorHandler;
 import org.vectomatic.file.events.LoadEndEvent;
 import org.vectomatic.file.events.LoadEndHandler;
 
@@ -19,7 +20,6 @@ import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.regexp.shared.MatchResult;
 import com.google.gwt.regexp.shared.RegExp;
-import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Grid;
 import com.google.gwt.user.client.ui.HorizontalPanel;
@@ -28,7 +28,9 @@ import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
+import com.redhat.topicindex.rest.collections.BaseRestCollectionV1;
 import com.redhat.topicindex.rest.entities.interfaces.RESTImageV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTLanguageImageV1;
 import com.smartgwt.client.widgets.Progressbar;
 
 @EntryPoint
@@ -44,7 +46,7 @@ public class App
 
 	private final List<ImageUploadData> imageUploadBlocks = new ArrayList<ImageUploadData>();
 	private final TextBox prefix = new TextBox();
-	private final TextArea finalResults = new TextArea(); 
+	private final TextArea finalResults = new TextArea();
 	final Button upload = new Button("Upload");
 	final Button newLangButton = new Button("New Language");
 	final Progressbar progress = new Progressbar();
@@ -58,11 +60,11 @@ public class App
 		/* Init the REST service */
 		RestClient.setApplicationRoot(REST_SERVER);
 		RestClient.setJacksonMarshallingActive(true);
-		
+
 		/* Build the user interface */
 		buildUI();
 	}
-	
+
 	private void buildUI()
 	{
 		progress.setVisible(false);
@@ -87,12 +89,12 @@ public class App
 		final ImageUploadData initialBlock = new ImageUploadData();
 		imageUploadBlocks.add(initialBlock);
 		verticalPanel.add(initialBlock.getGrid());
-		
+
 		layoutGrid.setWidget(2, 0, finalResults);
 
 		final HorizontalPanel horizontalLayout = new HorizontalPanel();
 		layoutGrid.setWidget(3, 0, horizontalLayout);
-		
+
 		newLangButton.addClickHandler(new ClickHandler()
 		{
 			@Override
@@ -104,7 +106,7 @@ public class App
 			}
 		});
 		horizontalLayout.add(newLangButton);
-		
+
 		horizontalLayout.add(upload);
 
 		upload.addClickHandler(new ClickHandler()
@@ -112,155 +114,198 @@ public class App
 			@Override
 			public void onClick(ClickEvent event)
 			{
+				final List<String> fileNames = getUniqueFileNames();
+				if (fileNames.size() != 0)
+				{
+					setEnabled(false);
 
-				setEnabled(false);	
-				
-				finalResults.setText("");
-				finalResults.setVisible(false);
-				
-				progress.setVisible(true);
-				
-				final StringBuilder results = new StringBuilder();
-				processImage(0, 0, results);
+					finalResults.setText("");
+					finalResults.setVisible(false);
+
+					progress.setVisible(true);
+
+					final StringBuilder results = new StringBuilder();
+					final List<RESTImageV1> images = new ArrayList<RESTImageV1>();
+					processFile(0, fileNames, results, images);
+				}
 			}
 		});
-		
+
 		horizontalLayout.add(progress);
 
 		RootPanel.get().add(layoutGrid);
 	}
-	
+
+	private List<String> getUniqueFileNames()
+	{
+		final List<String> retValue = new ArrayList<String>();
+
+		for (final ImageUploadData data : this.imageUploadBlocks)
+		{
+			for (final File file : data.getUpload().getFiles())
+			{
+				if (!retValue.contains(data))
+				{
+					if (!retValue.contains(file.getName()))
+						retValue.add(file.getName());
+				}
+			}
+		}
+
+		return retValue;
+	}
+
 	/**
 	 * Set the UI after the uploads are done
-	 * @param results The results to be displayed to the user.
+	 * 
+	 * @param results
+	 *            The results to be displayed to the user.
 	 */
-	private void uploadDone(final StringBuilder results)
+	private void uploadDone(final StringBuilder results, final List<RESTImageV1> images)
 	{
+		final RemoteCallback<String> genericSuccessCallback = new RemoteCallback<String>()
+		{
+			@Override
+			public void callback(final String retValue)
+			{
+				/* temp workaround for bug at https://community.jboss.org/thread/200710?tstart=0 */
+				/*final MatchResult filenameMatcher = RESTIMAGEV1_FILENAME_EXP.exec(retValue);
+				final boolean filenameMatchFound = RESTIMAGEV1_FILENAME_EXP.test(retValue);
+
+				final MatchResult idMatcher = RESTIMAGEV1_ID_EXP.exec(retValue);
+				final boolean idMatchFound = RESTIMAGEV1_ID_EXP.test(retValue);
+
+				if (filenameMatchFound && idMatchFound)
+				{
+					final String filename = filenameMatcher.getGroup(1);
+					final String id = idMatcher.getGroup(1);
+
+					results.append(id + ": " + filename + "\n");
+				}*/
+				
+				results.append("Upload was a success!\n");
+				results.append(retValue);
+			}
+		};
+
+		final ErrorCallback errorCallback = new ErrorCallback()
+		{
+			@Override
+			public boolean error(Message message, Throwable throwable)
+			{
+				results.append("Upload was a failure!");
+				return true;
+			}
+		};
+		
+		final BaseRestCollectionV1<RESTImageV1> restImages = new BaseRestCollectionV1<RESTImageV1>();
+		for (final RESTImageV1 image : images)
+		{
+			restImages.addItem(image);
+		}
+
+		final RESTInterfaceV1 restMethod = RestClient.create(RESTInterfaceV1.class, genericSuccessCallback, errorCallback);
+		
+		try
+		{
+			restMethod.createJSONImages("", restImages);
+		}
+		catch (final Exception ex)
+		{
+			results.append("Upload was a failure!\n");
+			results.append(ex.toString());
+		}
+		
 		finalResults.setText(results.toString());
 		finalResults.setVisible(true);
 		progress.setVisible(false);
 		setEnabled(true);
 	}
 
-	/**
-	 * This method looks through the imageUploadBlocks, and the files contained by the 
-	 * FileUploadExt in the block, and uploads the images to the REST server.
-	 * 
-	 * It is called recursively by the asynchronous REST callbacks, to provide
-	 * the appearance of a synchronous upload service.
-	 * 
-	 * @param blockIndex The index of the block to process
-	 * @param fileIndex The index of the file to process
-	 * @param results The results of the file uploads
-	 */
-	private void processImage(final int blockIndex, final int fileIndex, final StringBuilder results)
+	private void processLanguageImage(final int blockIndex, final int fileIndex, final List<String> fileNames, final StringBuilder results, final RESTImageV1 image, final File file, final RESTLanguageImageV1 langImg, final List<RESTImageV1> images)
 	{
-		/* there are no more blocks to process, so enable the UI and return */
-		if (blockIndex >= this.imageUploadBlocks.size())
-		{					
-			uploadDone(results);			
-			return;
-		}
+		final FileReader reader = new FileReader();
 
-		/* see if there are any more files to process */
-		final ImageUploadData data = imageUploadBlocks.get(blockIndex);
-
-		/* There are no more files to process, so move to the next block */
-		if (fileIndex >= data.getUpload().getFiles().getLength())
+		reader.addErrorHandler(new ErrorHandler()
 		{
-			processImage(blockIndex + 1, 0, results);
+			@Override
+			public void onError(org.vectomatic.file.events.ErrorEvent event)
+			{
+				processBlock(blockIndex + 1, fileIndex, fileNames, results, image, images);
+			}
+		});
+
+		reader.addLoadEndHandler(new LoadEndHandler()
+		{
+			@Override
+			public void onLoadEnd(LoadEndEvent event)
+			{
+				final ImageUploadData block = imageUploadBlocks.get(blockIndex);
+				
+				final String result = reader.getStringResult();
+				final byte[] buffer = getByteArray(result, 1);
+
+				langImg.explicitSetImageData(buffer);
+				langImg.explicitSetLocale(block.getLanguage().getValue(block.getLanguage().getSelectedIndex()));
+				langImg.explicitSetFilename(prefix.getText() + file.getName());
+
+				processBlock(blockIndex + 1, fileIndex, fileNames, results, image, images);
+			}
+		});
+
+		reader.readAsBinaryString(file);
+	}
+
+	private void processBlock(final int blockIndex, final int fileIndex, final List<String> fileNames, final StringBuilder results, final RESTImageV1 image, final List<RESTImageV1> images)
+	{
+		if (blockIndex >= this.imageUploadBlocks.size())
+		{
+			processFile(fileIndex + 1, fileNames, results, images);
 		}
-		/* There are files to process, process them and then move to the next file */
 		else
 		{
-			final float blockLevelProgress = (float)blockIndex / this.imageUploadBlocks.size();
-			final float fileLevelProgress = (float)fileIndex / data.getUpload().getFiles().getLength() / this.imageUploadBlocks.size();
-			
-			progress.setPercentDone((int) ((blockLevelProgress + fileLevelProgress)  * 100));
-			
-			final File file = data.getUpload().getFiles().getItem(fileIndex);
+			final String filename = fileNames.get(fileIndex);
+			final ImageUploadData block = this.imageUploadBlocks.get(blockIndex);
 
-			final RemoteCallback<String> genericSuccessCallback = new RemoteCallback<String>()
+			for (final File file : block.getUpload().getFiles())
 			{
-				@Override
-				public void callback(final String retValue)
+				if (file.getName().equals(filename))
 				{
-					/* temp workaround for bug at https://community.jboss.org/thread/200710?tstart=0 */
-					final MatchResult filenameMatcher = RESTIMAGEV1_FILENAME_EXP.exec(retValue);
-					final boolean filenameMatchFound = RESTIMAGEV1_FILENAME_EXP.test(retValue);
+					final RESTLanguageImageV1 langImg = new RESTLanguageImageV1();
+					langImg.setAddItem(true);
+					image.getLanguageImages_OTM().addItem(langImg);
+					processLanguageImage(blockIndex, fileIndex, fileNames, results, image, file, langImg, images);
 
-					final MatchResult idMatcher = RESTIMAGEV1_ID_EXP.exec(retValue);
-					final boolean idMatchFound = RESTIMAGEV1_ID_EXP.test(retValue);
-
-					if (filenameMatchFound && idMatchFound)
-					{
-						final String filename = filenameMatcher.getGroup(1);
-						final String id = idMatcher.getGroup(1);
-
-						results.append(id + ": " + filename + "\n");
-					}
-
-					processImage(blockIndex, fileIndex + 1, results);
+					break;
 				}
-			};
-
-			final RemoteCallback<RESTImageV1> successCallback = new RemoteCallback<RESTImageV1>()
-			{
-				@Override
-				public void callback(final RESTImageV1 retValue)
-				{
-					results.append(retValue.getFilename() + ": " + retValue.getId().toString() + "\n");
-					
-					processImage(blockIndex, fileIndex + 1, results);
-				}
-			};
-
-			final ErrorCallback errorCallback = new ErrorCallback()
-			{
-				@Override
-				public boolean error(Message message, Throwable throwable)
-				{
-					results.append(file.getName() + ": ERROR!");
-					processImage(blockIndex, fileIndex + 1, results);					
-					return true;
-				}
-			};
-
-			final RESTInterfaceV1 restMethod = RestClient.create(RESTInterfaceV1.class, genericSuccessCallback, errorCallback);
-
-			final FileReader reader = new FileReader();
-			reader.addLoadEndHandler(new LoadEndHandler()
-			{
-				@Override
-				public void onLoadEnd(LoadEndEvent event)
-				{
-
-					final String result = reader.getStringResult();
-					final byte[] buffer = getByteArray(result, 1);
-
-					final RESTImageV1 image = new RESTImageV1();
-					image.explicitSetImageData(buffer);
-					image.explicitSetFilename(prefix.getText()+ file.getName());
-
-					try
-					{
-						restMethod.createJSONImage("", image);
-					}
-					catch (final Exception ex)
-					{
-						ex.printStackTrace();
-						Window.alert(ex.toString());
-					}
-				}
-			});
-
-			reader.readAsBinaryString(file);
+			}
 		}
 	}
-	
+
+	private void processFile(final int fileIndex, final List<String> fileNames, final StringBuilder results, final List<RESTImageV1> images)
+	{
+		if (fileIndex >= fileNames.size())
+		{
+			uploadDone(results, images);
+		}
+		else
+		{
+			final int progressValue = (int) ((float) fileIndex / fileNames.size() * 100);
+			progress.setPercentDone(progressValue);
+			
+			final RESTImageV1 image = new RESTImageV1();
+			image.setAddItem(true);
+			image.setLanguageImages_OTM(new BaseRestCollectionV1<RESTLanguageImageV1>());
+			images.add(image);
+			processBlock(0, fileIndex, fileNames, results, image, images);
+		}
+	}
+
 	/**
 	 * Set the state of the UI elements
-	 * @param enabled true if the elements are to be enabled, false otherwise
+	 * 
+	 * @param enabled
+	 *            true if the elements are to be enabled, false otherwise
 	 */
 	private void setEnabled(final boolean enabled)
 	{
@@ -268,7 +313,7 @@ public class App
 		{
 			block.setEnabled(enabled);
 		}
-		
+
 		this.finalResults.setEnabled(enabled);
 		this.prefix.setEnabled(enabled);
 		this.upload.setEnabled(enabled);
@@ -277,8 +322,11 @@ public class App
 
 	/**
 	 * Replacement for String.toByteArray()
-	 * @param string The string to convert
-	 * @param bytesPerChar The number of bytes per character
+	 * 
+	 * @param string
+	 *            The string to convert
+	 * @param bytesPerChar
+	 *            The number of bytes per character
 	 * @return the same as the standard Java String.toByteArray() method
 	 */
 	public static byte[] getByteArray(final String string, final int bytesPerChar)
