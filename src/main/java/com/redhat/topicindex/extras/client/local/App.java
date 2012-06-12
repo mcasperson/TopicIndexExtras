@@ -41,7 +41,7 @@ public class App
 	private static final String RESTIMAGEV1_ID_RE = "\"id\":(\\d+)";
 	private static final RegExp RESTIMAGEV1_ID_EXP = RegExp.compile(RESTIMAGEV1_ID_RE);
 	private static final String REST_SERVER = "http://localhost:8080/TopicIndex/seam/resource/rest";
-	private static final String IMAGE_COLLECTION_EXPAND = "{\"branches\": [{\"branches\": [{\"trunk\": {\"name\": \"subcollection\"}}], \"trunk\": {\"name\": \"collectionname\"}}]}";
+	private static final String IMAGE_COLLECTION_EXPAND = "{\"branches\": [{\"branches\": [{\"trunk\": {\"name\": \"languageimages\"}}], \"trunk\": {\"name\": \"images\"}}]}";
 
 	// private static final String REST_SERVER = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
 
@@ -193,14 +193,20 @@ public class App
 			public void callback(final BaseRestCollectionV1<RESTImageV1> retValue)
 			{
 				/* output a mapping of file names to image ids */
-				for (final RESTImageV1 image : retValue.getItems() )
+				if (retValue.getItems() != null)
 				{
-					for (final RESTLanguageImageV1 langImage : image.getLanguageImages_OTM().getItems())
+					for (final RESTImageV1 image : retValue.getItems())
 					{
-						results.append(image.getId() + ": " + langImage.getFilename() + "\n");
+						if (image.getLanguageImages_OTM() != null && image.getLanguageImages_OTM().getItems() != null)
+						{
+							for (final RESTLanguageImageV1 langImage : image.getLanguageImages_OTM().getItems())
+							{
+								results.append(image.getId() + ": " + langImage.getFilename() + "\n");
+							}
+						}
 					}
 				}
-				
+
 				results.append(retValue.getSize());
 				reEnabledUI(results);
 			}
@@ -223,7 +229,7 @@ public class App
 			restImages.addItem(image);
 		}
 
-		//final RESTInterfaceV1 restMethod = RestClient.create(RESTInterfaceV1.class, genericSuccessCallback, errorCallback);
+		// final RESTInterfaceV1 restMethod = RestClient.create(RESTInterfaceV1.class, genericSuccessCallback, errorCallback);
 		final RESTInterfaceV1 restMethod = RestClient.create(RESTInterfaceV1.class, successCallback, errorCallback);
 
 		try
