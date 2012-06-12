@@ -7,6 +7,7 @@ import javax.annotation.PostConstruct;
 import org.jboss.errai.bus.client.api.ErrorCallback;
 import org.jboss.errai.bus.client.api.Message;
 import org.jboss.errai.bus.client.api.RemoteCallback;
+import org.jboss.errai.enterprise.client.jaxrs.MarshallingWrapper;
 import org.jboss.errai.enterprise.client.jaxrs.api.RestClient;
 import org.jboss.errai.ioc.client.api.EntryPoint;
 import org.vectomatic.file.File;
@@ -131,8 +132,23 @@ public class App
 				}
 			}
 		});
+		
+		
 
 		horizontalLayout.add(progress);
+		
+		final Button test = new Button("test");
+		test.addClickHandler(new ClickHandler(){
+
+			@Override
+			public void onClick(ClickEvent event)
+			{
+				final String json = "{\"items\":[],\"expand\":\"images\",\"startExpandIndex\":0,\"endExpandIndex\":1,\"size\":1}";
+				final String noItems = "{\"expand\":\"images\",\"startExpandIndex\":0,\"endExpandIndex\":1,\"size\":1}";
+				MarshallingWrapper.fromJSON(json, BaseRestCollectionV1.class);
+				
+			}});
+		horizontalLayout.add(test);
 
 		RootPanel.get().add(layoutGrid);
 	}
