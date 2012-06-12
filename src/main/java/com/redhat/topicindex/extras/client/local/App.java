@@ -133,23 +133,8 @@ public class App
 			}
 		});
 		
-		
-
 		horizontalLayout.add(progress);
 		
-		final Button test = new Button("test");
-		test.addClickHandler(new ClickHandler(){
-
-			@Override
-			public void onClick(ClickEvent event)
-			{
-				final String json = "{\"items\":[],\"expand\":\"images\",\"startExpandIndex\":0,\"endExpandIndex\":1,\"size\":1}";
-				final String noItems = "{\"expand\":\"images\",\"startExpandIndex\":0,\"endExpandIndex\":1,\"size\":1}";
-				MarshallingWrapper.fromJSON(json, BaseRestCollectionV1.class);
-				
-			}});
-		horizontalLayout.add(test);
-
 		RootPanel.get().add(layoutGrid);
 	}
 
@@ -180,34 +165,13 @@ public class App
 	 */
 	private void uploadDone(final StringBuilder results, final List<RESTImageV1> images)
 	{
-		final RemoteCallback<String> genericSuccessCallback = new RemoteCallback<String>()
-		{
-			@Override
-			public void callback(final String retValue)
-			{
-				/* temp workaround for bug at https://community.jboss.org/thread/200710?tstart=0 */
-				/*
-				 * final MatchResult filenameMatcher = RESTIMAGEV1_FILENAME_EXP.exec(retValue); final boolean filenameMatchFound =
-				 * RESTIMAGEV1_FILENAME_EXP.test(retValue);
-				 * 
-				 * final MatchResult idMatcher = RESTIMAGEV1_ID_EXP.exec(retValue); final boolean idMatchFound = RESTIMAGEV1_ID_EXP.test(retValue);
-				 * 
-				 * if (filenameMatchFound && idMatchFound) { final String filename = filenameMatcher.getGroup(1); final String id = idMatcher.getGroup(1);
-				 * 
-				 * results.append(id + ": " + filename + "\n"); }
-				 */
-
-				results.append("Upload was a success!\n");
-				results.append(retValue);
-				reEnabledUI(results);
-			}
-		};
-
 		RemoteCallback<BaseRestCollectionV1<RESTImageV1>> successCallback = new RemoteCallback<BaseRestCollectionV1<RESTImageV1>>()
 		{
 			@Override
 			public void callback(final BaseRestCollectionV1<RESTImageV1> retValue)
 			{
+				System.out.println("Progress [UPLOAD DONE]");
+				
 				/* output a mapping of file names to image ids */
 				if (retValue.getItems() != null)
 				{
@@ -245,11 +209,11 @@ public class App
 			restImages.addItem(image);
 		}
 
-		// final RESTInterfaceV1 restMethod = RestClient.create(RESTInterfaceV1.class, genericSuccessCallback, errorCallback);
 		final RESTInterfaceV1 restMethod = RestClient.create(RESTInterfaceV1.class, successCallback, errorCallback);
 
 		try
 		{
+			System.out.println("Progress [READING]: 100%");
 			System.out.println("Progress [UPLOADING]");
 			restMethod.createJSONImages(IMAGE_COLLECTION_EXPAND, restImages);
 		}
