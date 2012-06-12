@@ -41,6 +41,7 @@ public class App
 	private static final String RESTIMAGEV1_ID_RE = "\"id\":(\\d+)";
 	private static final RegExp RESTIMAGEV1_ID_EXP = RegExp.compile(RESTIMAGEV1_ID_RE);
 	private static final String REST_SERVER = "http://localhost:8080/TopicIndex/seam/resource/rest";
+	private static final String IMAGE_COLLECTION_EXPAND = "{\"branches\": [{\"branches\": [{\"trunk\": {\"name\": \"subcollection\"}}], \"trunk\": {\"name\": \"collectionname\"}}]}";
 
 	// private static final String REST_SERVER = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
 
@@ -191,19 +192,15 @@ public class App
 			@Override
 			public void callback(final BaseRestCollectionV1<RESTImageV1> retValue)
 			{
-				/* temp workaround for bug at https://community.jboss.org/thread/200710?tstart=0 */
-				/*
-				 * final MatchResult filenameMatcher = RESTIMAGEV1_FILENAME_EXP.exec(retValue); final boolean filenameMatchFound =
-				 * RESTIMAGEV1_FILENAME_EXP.test(retValue);
-				 * 
-				 * final MatchResult idMatcher = RESTIMAGEV1_ID_EXP.exec(retValue); final boolean idMatchFound = RESTIMAGEV1_ID_EXP.test(retValue);
-				 * 
-				 * if (filenameMatchFound && idMatchFound) { final String filename = filenameMatcher.getGroup(1); final String id = idMatcher.getGroup(1);
-				 * 
-				 * results.append(id + ": " + filename + "\n"); }
-				 */
-
-				results.append("Upload was a success!\n");
+				/* output a mapping of file names to image ids */
+				for (final RESTImageV1 image : retValue.getItems() )
+				{
+					for (final RESTLanguageImageV1 langImage : image.getLanguageImages_OTM().getItems())
+					{
+						results.append(image.getId() + ": " + langImage.getFilename() + "\n");
+					}
+				}
+				
 				results.append(retValue.getSize());
 				reEnabledUI(results);
 			}
@@ -232,7 +229,7 @@ public class App
 		try
 		{
 			System.out.println("Progress [UPLOADING]");
-			restMethod.createJSONImages("", restImages);
+			restMethod.createJSONImages(IMAGE_COLLECTION_EXPAND, restImages);
 		}
 		catch (final Exception ex)
 		{
