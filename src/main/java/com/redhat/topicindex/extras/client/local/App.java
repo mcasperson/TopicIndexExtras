@@ -169,22 +169,43 @@ public class App
 			public void callback(final String retValue)
 			{
 				/* temp workaround for bug at https://community.jboss.org/thread/200710?tstart=0 */
-				/*final MatchResult filenameMatcher = RESTIMAGEV1_FILENAME_EXP.exec(retValue);
-				final boolean filenameMatchFound = RESTIMAGEV1_FILENAME_EXP.test(retValue);
+				/*
+				 * final MatchResult filenameMatcher = RESTIMAGEV1_FILENAME_EXP.exec(retValue); final boolean filenameMatchFound =
+				 * RESTIMAGEV1_FILENAME_EXP.test(retValue);
+				 * 
+				 * final MatchResult idMatcher = RESTIMAGEV1_ID_EXP.exec(retValue); final boolean idMatchFound = RESTIMAGEV1_ID_EXP.test(retValue);
+				 * 
+				 * if (filenameMatchFound && idMatchFound) { final String filename = filenameMatcher.getGroup(1); final String id = idMatcher.getGroup(1);
+				 * 
+				 * results.append(id + ": " + filename + "\n"); }
+				 */
 
-				final MatchResult idMatcher = RESTIMAGEV1_ID_EXP.exec(retValue);
-				final boolean idMatchFound = RESTIMAGEV1_ID_EXP.test(retValue);
-
-				if (filenameMatchFound && idMatchFound)
-				{
-					final String filename = filenameMatcher.getGroup(1);
-					final String id = idMatcher.getGroup(1);
-
-					results.append(id + ": " + filename + "\n");
-				}*/
-				
 				results.append("Upload was a success!\n");
 				results.append(retValue);
+				reEnabledUI(results);
+			}
+		};
+
+		RemoteCallback<BaseRestCollectionV1<RESTImageV1>> successCallback = new RemoteCallback<BaseRestCollectionV1<RESTImageV1>>()
+		{
+			@Override
+			public void callback(final BaseRestCollectionV1<RESTImageV1> retValue)
+			{
+				/* temp workaround for bug at https://community.jboss.org/thread/200710?tstart=0 */
+				/*
+				 * final MatchResult filenameMatcher = RESTIMAGEV1_FILENAME_EXP.exec(retValue); final boolean filenameMatchFound =
+				 * RESTIMAGEV1_FILENAME_EXP.test(retValue);
+				 * 
+				 * final MatchResult idMatcher = RESTIMAGEV1_ID_EXP.exec(retValue); final boolean idMatchFound = RESTIMAGEV1_ID_EXP.test(retValue);
+				 * 
+				 * if (filenameMatchFound && idMatchFound) { final String filename = filenameMatcher.getGroup(1); final String id = idMatcher.getGroup(1);
+				 * 
+				 * results.append(id + ": " + filename + "\n"); }
+				 */
+
+				results.append("Upload was a success!\n");
+				results.append(retValue.getSize());
+				reEnabledUI(results);
 			}
 		};
 
@@ -194,20 +215,23 @@ public class App
 			public boolean error(Message message, Throwable throwable)
 			{
 				results.append("Upload was a failure!");
+				reEnabledUI(results);
 				return true;
 			}
 		};
-		
+
 		final BaseRestCollectionV1<RESTImageV1> restImages = new BaseRestCollectionV1<RESTImageV1>();
 		for (final RESTImageV1 image : images)
 		{
 			restImages.addItem(image);
 		}
 
-		final RESTInterfaceV1 restMethod = RestClient.create(RESTInterfaceV1.class, genericSuccessCallback, errorCallback);
-		
+		//final RESTInterfaceV1 restMethod = RestClient.create(RESTInterfaceV1.class, genericSuccessCallback, errorCallback);
+		final RESTInterfaceV1 restMethod = RestClient.create(RESTInterfaceV1.class, successCallback, errorCallback);
+
 		try
 		{
+			System.out.println("Progress [UPLOADING]");
 			restMethod.createJSONImages("", restImages);
 		}
 		catch (final Exception ex)
@@ -215,7 +239,10 @@ public class App
 			results.append("Upload was a failure!\n");
 			results.append(ex.toString());
 		}
-		
+	}
+
+	private void reEnabledUI(final StringBuilder results)
+	{
 		finalResults.setText(results.toString());
 		finalResults.setVisible(true);
 		progress.setVisible(false);
@@ -241,7 +268,7 @@ public class App
 			public void onLoadEnd(LoadEndEvent event)
 			{
 				final ImageUploadData block = imageUploadBlocks.get(blockIndex);
-				
+
 				final String result = reader.getStringResult();
 				final byte[] buffer = getByteArray(result, 1);
 
@@ -292,9 +319,9 @@ public class App
 		{
 			final int progressValue = (int) ((float) fileIndex / fileNames.size() * 100);
 			progress.setPercentDone(progressValue);
-			
-			System.out.println("Progress: " + progressValue);
-			
+
+			System.out.println("Progress [READING]: " + progressValue + "%");
+
 			final RESTImageV1 image = new RESTImageV1();
 			image.setAddItem(true);
 			image.explicitSetLanguageImages_OTM(new BaseRestCollectionV1<RESTLanguageImageV1>());
