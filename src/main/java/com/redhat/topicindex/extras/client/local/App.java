@@ -37,10 +37,6 @@ import com.smartgwt.client.widgets.Progressbar;
 @EntryPoint
 public class App
 {
-	private static final String RESTIMAGEV1_FILENAME_RE = "\"filename\":\"(.*?)\"";
-	private static final RegExp RESTIMAGEV1_FILENAME_EXP = RegExp.compile(RESTIMAGEV1_FILENAME_RE);
-	private static final String RESTIMAGEV1_ID_RE = "\"id\":(\\d+)";
-	private static final RegExp RESTIMAGEV1_ID_EXP = RegExp.compile(RESTIMAGEV1_ID_RE);
 	private static final String REST_SERVER = "http://localhost:8080/TopicIndex/seam/resource/rest";
 	private static final String IMAGE_COLLECTION_EXPAND = "{\"branches\": [{\"branches\": [{\"trunk\": {\"name\": \"languageimages\"}}], \"trunk\": {\"name\": \"images\"}}]}";
 
@@ -187,7 +183,6 @@ public class App
 					}
 				}
 
-				results.append(retValue.getSize());
 				reEnabledUI(results);
 			}
 		};
