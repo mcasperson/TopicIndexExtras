@@ -40,8 +40,8 @@ import com.smartgwt.client.widgets.Progressbar;
 public class App
 {
 	private static final String IMAGE_COLLECTION_EXPAND = "{\"branches\": [{\"branches\": [{\"trunk\": {\"name\": \"languageimages\"}}], \"trunk\": {\"name\": \"images\"}}]}";
-	//private static final String REST_SERVER = "http://localhost:8080/TopicIndex/seam/resource/rest";
-	private static final String REST_SERVER = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
+	private static final String REST_SERVER = "http://localhost:8080/TopicIndex/seam/resource/rest";
+	//private static final String REST_SERVER = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
 
 	private final List<ImageUploadData> imageUploadBlocks = new ArrayList<ImageUploadData>();
 	private final TextBox prefix = new TextBox();
