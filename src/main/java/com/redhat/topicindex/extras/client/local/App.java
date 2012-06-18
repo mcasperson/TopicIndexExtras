@@ -30,6 +30,8 @@ import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.redhat.topicindex.rest.collections.BaseRestCollectionV1;
+import com.redhat.topicindex.rest.collections.RESTImageCollectionV1;
+import com.redhat.topicindex.rest.collections.RESTLanguageImageCollectionV1;
 import com.redhat.topicindex.rest.entities.interfaces.RESTImageV1;
 import com.redhat.topicindex.rest.entities.interfaces.RESTLanguageImageV1;
 import com.smartgwt.client.widgets.Progressbar;
@@ -37,10 +39,9 @@ import com.smartgwt.client.widgets.Progressbar;
 @EntryPoint
 public class App
 {
-	private static final String REST_SERVER = "http://localhost:8080/TopicIndex/seam/resource/rest";
 	private static final String IMAGE_COLLECTION_EXPAND = "{\"branches\": [{\"branches\": [{\"trunk\": {\"name\": \"languageimages\"}}], \"trunk\": {\"name\": \"images\"}}]}";
-
-	// private static final String REST_SERVER = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
+	//private static final String REST_SERVER = "http://localhost:8080/TopicIndex/seam/resource/rest";
+	private static final String REST_SERVER = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
 
 	private final List<ImageUploadData> imageUploadBlocks = new ArrayList<ImageUploadData>();
 	private final TextBox prefix = new TextBox();
@@ -161,10 +162,10 @@ public class App
 	 */
 	private void uploadDone(final StringBuilder results, final List<RESTImageV1> images)
 	{
-		RemoteCallback<BaseRestCollectionV1<RESTImageV1>> successCallback = new RemoteCallback<BaseRestCollectionV1<RESTImageV1>>()
+		RemoteCallback<RESTImageCollectionV1> successCallback = new RemoteCallback<RESTImageCollectionV1>()
 		{
 			@Override
-			public void callback(final BaseRestCollectionV1<RESTImageV1> retValue)
+			public void callback(final RESTImageCollectionV1 retValue)
 			{
 				System.out.println("Progress [UPLOAD DONE]");
 				
@@ -198,7 +199,7 @@ public class App
 			}
 		};
 
-		final BaseRestCollectionV1<RESTImageV1> restImages = new BaseRestCollectionV1<RESTImageV1>();
+		final RESTImageCollectionV1 restImages = new RESTImageCollectionV1();
 		for (final RESTImageV1 image : images)
 		{
 			restImages.addItem(image);
@@ -302,7 +303,7 @@ public class App
 
 			final RESTImageV1 image = new RESTImageV1();
 			image.setAddItem(true);
-			image.explicitSetLanguageImages_OTM(new BaseRestCollectionV1<RESTLanguageImageV1>());
+			image.explicitSetLanguageImages_OTM(new RESTLanguageImageCollectionV1());
 			images.add(image);
 			processBlock(0, fileIndex, fileNames, results, image, images);
 		}
