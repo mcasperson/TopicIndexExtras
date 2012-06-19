@@ -64,13 +64,6 @@
       <version>${errai.version}</version>
     </dependency>
 
-    <dependency>
-      <groupId>org.jboss.errai</groupId>
-      <artifactId>errai-jaxrs-client</artifactId>
-      <version>${errai.version}</version>
-      <scope>provided</scope>
-      <type>java-source</type>
-    </dependency>
     
         <dependency>
       <groupId>org.jboss.errai</groupId>
@@ -128,12 +121,6 @@
           <groupId>org.jboss.errai</groupId>
           <artifactId>errai-common</artifactId>
           <version>${errai.version}</version>
-          <exclusions>
-            <exclusion>
-              <artifactId>xml-apis</artifactId>
-              <groupId>xml-apis</groupId>
-            </exclusion>
-          </exclusions>
         </dependency>
 
         <dependency>
