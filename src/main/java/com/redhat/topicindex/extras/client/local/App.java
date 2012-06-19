@@ -16,11 +16,13 @@ import org.vectomatic.file.events.ErrorHandler;
 import org.vectomatic.file.events.LoadEndEvent;
 import org.vectomatic.file.events.LoadEndHandler;
 
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.regexp.shared.MatchResult;
 import com.google.gwt.regexp.shared.RegExp;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Grid;
 import com.google.gwt.user.client.ui.HorizontalPanel;
@@ -41,7 +43,7 @@ public class App
 {
 	private static final String IMAGE_COLLECTION_EXPAND = "{\"branches\": [{\"branches\": [{\"trunk\": {\"name\": \"languageimages\"}}], \"trunk\": {\"name\": \"images\"}}]}";
 	private static final String REST_SERVER = "http://localhost:8080/TopicIndex/seam/resource/rest";
-	//private static final String REST_SERVER = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
+	// private static final String REST_SERVER = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
 
 	private final List<ImageUploadData> imageUploadBlocks = new ArrayList<ImageUploadData>();
 	private final TextBox prefix = new TextBox();
@@ -56,6 +58,15 @@ public class App
 	@PostConstruct
 	public void init()
 	{
+		GWT.setUncaughtExceptionHandler(new GWT.UncaughtExceptionHandler()
+		{
+			public void onUncaughtException(final Throwable ex)
+			{
+				ex.printStackTrace();
+				Window.alert("Uncaught exception event");
+			}
+		});
+
 		/* Init the REST service */
 		RestClient.setApplicationRoot(REST_SERVER);
 		RestClient.setJacksonMarshallingActive(true);
@@ -129,9 +140,9 @@ public class App
 				}
 			}
 		});
-		
+
 		horizontalLayout.add(progress);
-		
+
 		RootPanel.get().add(layoutGrid);
 	}
 
@@ -168,7 +179,7 @@ public class App
 			public void callback(final RESTImageCollectionV1 retValue)
 			{
 				System.out.println("Progress [UPLOAD DONE]");
-				
+
 				/* output a mapping of file names to image ids */
 				if (retValue.getItems() != null)
 				{
