@@ -7,7 +7,6 @@ import javax.annotation.PostConstruct;
 import org.jboss.errai.bus.client.api.ErrorCallback;
 import org.jboss.errai.bus.client.api.Message;
 import org.jboss.errai.bus.client.api.RemoteCallback;
-import org.jboss.errai.enterprise.client.jaxrs.MarshallingWrapper;
 import org.jboss.errai.enterprise.client.jaxrs.api.RestClient;
 import org.jboss.errai.ioc.client.api.EntryPoint;
 import org.vectomatic.file.File;
@@ -20,8 +19,6 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Style.Unit;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.regexp.shared.MatchResult;
-import com.google.gwt.regexp.shared.RegExp;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Grid;
@@ -31,7 +28,6 @@ import com.google.gwt.user.client.ui.RootPanel;
 import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
-import com.redhat.topicindex.rest.collections.BaseRestCollectionV1;
 import com.redhat.topicindex.rest.collections.RESTImageCollectionV1;
 import com.redhat.topicindex.rest.collections.RESTLanguageImageCollectionV1;
 import com.redhat.topicindex.rest.entities.interfaces.RESTImageV1;
@@ -60,6 +56,7 @@ public class App
 	{
 		GWT.setUncaughtExceptionHandler(new GWT.UncaughtExceptionHandler()
 		{
+			@Override
 			public void onUncaughtException(final Throwable ex)
 			{
 				ex.printStackTrace();
@@ -163,6 +160,66 @@ public class App
 		}
 
 		return retValue;
+	}
+
+	private void processRESTImage(final int index, final StringBuilder results, final List<RESTImageV1> images)
+	{
+		if (index >= images.size())
+		{
+			System.out.println("Progress [UPLOAD] 100%");
+			reEnabledUI(results);
+		}
+		else
+		{
+
+			RemoteCallback<RESTImageV1> successCallback = new RemoteCallback<RESTImageV1>()
+			{
+				@Override
+				public void callback(final RESTImageV1 image)
+				{
+					final int progressValue = (int) ((float) index / images.size() * 50);
+					progress.setPercentDone(progressValue);
+					
+					System.out.println("Progress [UPLOAD] " + progressValue + "%");
+
+					/* output a mapping of file names to image ids */
+					if (image.getLanguageImages_OTM() != null && image.getLanguageImages_OTM().getItems() != null)
+					{
+						for (final RESTLanguageImageV1 langImage : image.getLanguageImages_OTM().getItems())
+						{
+							results.append("[" + langImage.getLocale() + "] " + image.getId() + ": " + langImage.getFilename() + "\n");
+							processRESTImage(index + 1, results, images);
+						}
+					}
+				}
+			};
+
+			final ErrorCallback errorCallback = new ErrorCallback()
+			{
+				@Override
+				public boolean error(Message message, Throwable throwable)
+				{
+					results.append("Upload was a failure!");
+					reEnabledUI(results);
+					return true;
+				}
+			};
+
+			final RESTInterfaceV1 restMethod = RestClient.create(RESTInterfaceV1.class, successCallback, errorCallback);
+
+			try
+			{
+				
+				final RESTImageV1 image = images.get(index);
+				restMethod.createJSONImage(IMAGE_COLLECTION_EXPAND, image);
+			}
+			catch (final Exception ex)
+			{
+				results.append("Upload was a failure!\n");
+				results.append(ex.toString());
+				processRESTImage(index + 1, results, images);
+			}
+		}
 	}
 
 	/**
@@ -303,11 +360,14 @@ public class App
 	{
 		if (fileIndex >= fileNames.size())
 		{
-			uploadDone(results, images);
+			//uploadDone(results, images);
+			System.out.println("Progress [READING]: 100%");
+			System.out.println("Progress [UPLOADING]");
+			processRESTImage(0, results, images);
 		}
 		else
 		{
-			final int progressValue = (int) ((float) fileIndex / fileNames.size() * 100);
+			final int progressValue = (int) ((float) fileIndex / fileNames.size() * 50);
 			progress.setPercentDone(progressValue);
 
 			System.out.println("Progress [READING]: " + progressValue + "%");
