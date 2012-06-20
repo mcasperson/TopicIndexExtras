@@ -177,7 +177,7 @@ public class App
 				@Override
 				public void callback(final RESTImageV1 image)
 				{
-					final int progressValue = (int) ((float) index / images.size() * 50);
+					final int progressValue = (int) ((float) index / images.size() * 50) + 50;
 					progress.setPercentDone(progressValue);
 					
 					System.out.println("Progress [UPLOAD] " + progressValue + "%");
