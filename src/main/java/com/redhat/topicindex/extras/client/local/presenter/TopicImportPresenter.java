@@ -206,6 +206,12 @@ public class TopicImportPresenter implements Presenter
 					log.append(file.getName() + ": This topic has had its document element changed from <task> to <section>.\n");
 					toplevelNode = replaceNodeWithSection(toplevelNode);
 				}
+				/* tasks are turned into sections */
+				else if (toplevelNodeName.equals("appendix"))
+				{
+					log.append(file.getName() + ": This topic has had its document element changed from <appendix> to <section>.\n");
+					toplevelNode = replaceNodeWithSection(toplevelNode);
+				}
 				/* variablelist are turned into sections */
 				else if (toplevelNodeName.equals("variablelist"))
 				{
