@@ -142,8 +142,6 @@ public class TopicImportPresenter implements Presenter
 				final String result = reader.getStringResult();
 
 				processXML(result, file, index, log);
-
-				pocessFiles(index + 1, log);
 			}
 		});
 
@@ -171,19 +169,19 @@ public class TopicImportPresenter implements Presenter
 			/* tasks are turned into sections */
 			else if (toplevelNodeName.equals("task"))
 			{
-				log.append(file.getName() + ": This topic has had its document element changed from task to section.\n");
+				log.append(file.getName() + ": This topic has had its document element changed from <task> to <section>.\n");
 				toplevelNode = replaceNodeWithSection(toplevelNode);
 			}
 			/* variablelist are turned into sections */
 			else if (toplevelNodeName.equals("variablelist"))
 			{
-				log.append(file.getName() + ": This topic has had its document element changed from variablelist to section.\n");
+				log.append(file.getName() + ": This topic has had its document element changed from <variablelist> to <section>.\n");
 				toplevelNode = replaceNodeWithSection(toplevelNode);
 			}
 			/* Some unknown node type */
 			else
 			{
-				log.append(file.getName() + ": This topic uses an unrecognised parent node of " + toplevelNodeName + ". No processing has been done for this topic, and the XML has been included as is.\n");
+				log.append(file.getName() + ": This topic uses an unrecognised parent node of <" + toplevelNodeName + ">. No processing has been done for this topic, and the XML has been included as is.\n");
 				uploadFile(result, file, index, log);
 				return;
 			}
