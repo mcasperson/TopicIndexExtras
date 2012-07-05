@@ -38,6 +38,8 @@ public class TopicImportPresenter implements Presenter
 		Widget asWidget();
 
 		TextArea getFileList();
+		
+		TextArea getLog();
 	}
 
 	@Inject
@@ -83,7 +85,7 @@ public class TopicImportPresenter implements Presenter
 	 */
 	private void processingDone(final StringBuilder log)
 	{
-
+		display.getLog().setText(log.toString());
 	}
 
 	/**
@@ -154,20 +156,23 @@ public class TopicImportPresenter implements Presenter
 		    final Document doc = XMLParser.parse(result);
 		    
 		    /* what is the top level element */
-		    final Node toplevelNode = doc.getParentNode();
+		    final Node toplevelNode = doc.getDocumentElement();
+		    
+		    /* Get the node name */
+		    final String toplevelNodeName = toplevelNode.getNodeName();
 		    
 		    /* sections can be imported directly */
-		    if (toplevelNode.getNodeName().equals("section"))
+		    if (toplevelNodeName.equals("section"))
 		    {
 		    	// no processing required
 		    }
 		    /* tasks are turned into sections */
-		    else if (toplevelNode.getNodeName().equals("task"))
+		    else if (toplevelNodeName.equals("task"))
 		    {
 		    	replaceNodeWithSection(toplevelNode);
 		    }
 		    /* variablelist are turned into sections */
-		    else if (toplevelNode.getNodeName().equals("variablelist"))
+		    else if (toplevelNodeName.equals("variablelist"))
 		    {
 		    	replaceNodeWithSection(toplevelNode);
 		    }
@@ -204,6 +209,8 @@ public class TopicImportPresenter implements Presenter
 		log.append("XML Contents is:\n");
 		log.append(topicXML + "\n");
 		log.append("-------------------------------------\n");
+		
+		pocessFiles(index + 1, log);
 	}
 	
 	/**

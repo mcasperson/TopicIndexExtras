@@ -20,7 +20,13 @@ public class TopicImportView extends Composite implements TopicImportPresenter.D
 	private final FileUploadExt upload = new FileUploadExt();
 	private final TextArea fileList = new TextArea();
 	private final TextBox tagIds = new TextBox();
+	private final TextArea log = new TextArea();
 	
+	public TextArea getLog()
+	{
+		return log;
+	}
+
 	@Override
 	public TextArea getFileList()
 	{
@@ -44,7 +50,7 @@ public class TopicImportView extends Composite implements TopicImportPresenter.D
 		final DecoratorPanel contentTableDecorator = new DecoratorPanel();
 		initWidget(contentTableDecorator);
 		
-		layoutTable = new Grid(4, 2);
+		layoutTable = new Grid(5, 2);
 		
 		final Label fileLabel = new Label("Please select the files to be imported.");
 		layoutTable.setWidget(0, 0, fileLabel);
@@ -59,8 +65,13 @@ public class TopicImportView extends Composite implements TopicImportPresenter.D
 		layoutTable.setWidget(2, 0, tagIdsLabel);
 		layoutTable.setWidget(2, 1, tagIds);
 		
+		log.setReadOnly(true);
+		final Label logLabel = new Label("Log");
+		layoutTable.setWidget(3, 0, logLabel);
+		layoutTable.setWidget(3, 1, log);
+		
 		goButton = new Button("Go");
-		layoutTable.setWidget(3, 0, goButton);
+		layoutTable.setWidget(4, 0, goButton);
 		
 		contentTableDecorator.add(layoutTable);
 	}
