@@ -206,10 +206,16 @@ public class TopicImportPresenter implements Presenter
 					log.append(file.getName() + ": This topic has had its document element changed from <task> to <section>.\n");
 					toplevelNode = replaceNodeWithSection(toplevelNode);
 				}
-				/* tasks are turned into sections */
+				/* appendicies are turned into sections */
 				else if (toplevelNodeName.equals("appendix"))
 				{
 					log.append(file.getName() + ": This topic has had its document element changed from <appendix> to <section>.\n");
+					toplevelNode = replaceNodeWithSection(toplevelNode);
+				}
+				/* examples are turned into sections */
+				else if (toplevelNodeName.equals("example"))
+				{
+					log.append(file.getName() + ": This topic has had its document element changed from <example> to <section>.\n");
 					toplevelNode = replaceNodeWithSection(toplevelNode);
 				}
 				/* variablelist are turned into sections */
@@ -217,6 +223,16 @@ public class TopicImportPresenter implements Presenter
 				{
 					log.append(file.getName() + ": This topic has had its document element changed from <variablelist> to <section>.\n");
 					toplevelNode = replaceNodeWithSection(toplevelNode);
+				}
+				/* tables are wrapped in sections */
+				else if (toplevelNodeName.equals("table"))
+				{
+					log.append(file.getName() + ": This topic has had its document element of <table> wrapped in a <section>.\n");					
+				}
+				/* screens are wrapped in sections */
+				else if (toplevelNodeName.equals("screen"))
+				{
+					log.append(file.getName() + ": This topic has had its document element of <screen> wrapped in a <section>.\n");					
 				}
 				/* Some unknown node type */
 				else
