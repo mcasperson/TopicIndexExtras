@@ -116,6 +116,33 @@
 			<artifactId>Commonutilities</artifactId>
 			<version>0.0.2-SNAPSHOT</version>
 		</dependency>
+
+		<!-- CDI Integration Modules -->
+		<dependency>
+			<groupId>org.jboss.errai</groupId>
+			<artifactId>errai-cdi-client</artifactId>
+			<version>${errai.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.jboss.errai</groupId>
+			<artifactId>errai-javax-enterprise</artifactId>
+			<version>${errai.version}</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.jboss.errai</groupId>
+			<artifactId>errai-weld-integration</artifactId>
+			<version>${errai.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.jboss.errai</groupId>
+			<artifactId>errai-cdi-jetty</artifactId>
+			<version>${errai.version}</version>
+		</dependency>
+
 	</dependencies>
 
 	<profiles>
