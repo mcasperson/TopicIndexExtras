@@ -327,6 +327,7 @@ public class TopicImportPresenter implements Presenter
 		display.getFileList().setEnabled(enabled);
 		display.getGoButton().setEnabled(enabled);
 		display.getTagIds().setEnabled(enabled);
+		display.getUpload().setEnabled(enabled);
 	}
 
 	@Override
