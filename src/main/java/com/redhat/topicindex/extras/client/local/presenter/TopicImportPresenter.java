@@ -119,7 +119,7 @@ public class TopicImportPresenter implements Presenter
 		}
 		else
 		{
-			final float percentDone = numFiles / (float)(index + 1) * 100.0f;
+			final float percentDone = (index + 1) / (float)numFiles * 100.0f;
 			display.getProgress().setPercentDone((int)percentDone);
 			processFile(display.getUpload().getFiles().getItem(index), index, log);
 		}

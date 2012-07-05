@@ -64,6 +64,8 @@ public class TopicImportView extends Composite implements TopicImportPresenter.D
 		layoutTable.setWidget(0, 1, upload);
 		
 		fileList.setReadOnly(true);
+		fileList.setWidth("60em");
+		fileList.setHeight("30em");
 		final Label selectedFilesLabel = new Label("These are the files you have selected.");
 		layoutTable.setWidget(1, 0, selectedFilesLabel);
 		layoutTable.setWidget(1, 1, fileList);
@@ -73,6 +75,8 @@ public class TopicImportView extends Composite implements TopicImportPresenter.D
 		layoutTable.setWidget(2, 1, getTagIds());
 		
 		log.setReadOnly(true);
+		log.setWidth("60em");
+		log.setHeight("30em");
 		final Label logLabel = new Label("Log");
 		layoutTable.setWidget(3, 0, logLabel);
 		layoutTable.setWidget(3, 1, log);
