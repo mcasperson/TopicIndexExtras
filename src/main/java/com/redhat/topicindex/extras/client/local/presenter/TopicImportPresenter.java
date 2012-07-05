@@ -169,24 +169,23 @@ public class TopicImportPresenter implements Presenter
 	{
 		try
 		{
+			String fixedResult = result;
+
+			/* remove utf-8 Byte Order Mark (BOM) if present */
+			if (fixedResult.startsWith(UTF_8_BOM))
+				fixedResult = fixedResult.replaceFirst(UTF_8_BOM, "");
+			
 			/*
 			 * It is rare that an XML file will actually list the xmlns:xi="http://www.w3.org/2001/XInclude" attribute, but without it any xi:include will
 			 * prevent the XML from being parsed. So if we have any instance of xi:include, make a note and upload the file as is.
 			 */
-			if (result.indexOf(XI_INCLUDE) != -1)
+			if (fixedResult.indexOf(XI_INCLUDE) != -1)
 			{
 				log.append(file.getName() + ": This topic contains an xi:include, and has been uploaded as is.\n");
-				uploadFile(result, file, index, log);
+				uploadFile(fixedResult, file, index, log);
 			}
 			else
 			{
-
-				String fixedResult = result;
-
-				/* remove utf-8 Byte Order Mark (BOM) if present */
-				if (fixedResult.startsWith(UTF_8_BOM))
-					fixedResult = fixedResult.replaceFirst(UTF_8_BOM, "");
-
 				/* parse the XML document into a DOM */
 				final Document doc = XMLParser.parse(fixedResult);
 
