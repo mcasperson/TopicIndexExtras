@@ -152,8 +152,14 @@ public class TopicImportPresenter implements Presenter
 	{
 		try
 		{
+			String fixedResult = result;
+			
+			/* remove utf-8 BOM marker (if present) */
+			if (fixedResult.startsWith("ï»¿"))
+				fixedResult = fixedResult.replaceFirst("ï»¿", "");
+			
 			/* parse the XML document into a DOM */
-			final Document doc = XMLParser.parse(result);
+			final Document doc = XMLParser.parse(fixedResult);
 
 			/* what is the top level element */
 			Node toplevelNode = doc.getDocumentElement();
