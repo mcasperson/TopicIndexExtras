@@ -171,11 +171,13 @@ public class TopicImportPresenter implements Presenter
 			/* tasks are turned into sections */
 			else if (toplevelNodeName.equals("task"))
 			{
+				log.append(file.getName() + ": This topic has had its document element changed from task to section.\n");
 				toplevelNode = replaceNodeWithSection(toplevelNode);
 			}
 			/* variablelist are turned into sections */
 			else if (toplevelNodeName.equals("variablelist"))
 			{
+				log.append(file.getName() + ": This topic has had its document element changed from variablelist to section.\n");
 				toplevelNode = replaceNodeWithSection(toplevelNode);
 			}
 			/* Some unknown node type */
@@ -251,12 +253,14 @@ public class TopicImportPresenter implements Presenter
 	{
 		final StringBuilder builder = new StringBuilder();
 
-		if (getFirstChild(node, "section") != null)
+		if (getFirstChild(node, "section", true) != null)
 			builder.append(" This topic has illegal nested sections.");
-		if (getFirstChild(node, "xref") != null)
+		if (getFirstChild(node, "xref", true) != null)
 			builder.append(" This topic has illegal xrefs.");
-		if (getFirstChild(node, "xi:include") != null)
+		if (getFirstChild(node, "xi:include", true) != null)
 			builder.append(" This topic has illegal xi:includes.");
+		if (getFirstChild(node, "title", false) == null)
+			builder.append(" This topic has no title.");
 
 		return builder.toString();
 	}
@@ -268,9 +272,10 @@ public class TopicImportPresenter implements Presenter
 	 *            The node to search
 	 * @param nodeName
 	 *            The name of the node to find
+	 * @param recursive true if a search is to be done on the children as well, false otherwise
 	 * @return null if no node is found, or the first node with the supplied name that was found
 	 */
-	private Node getFirstChild(final Node node, final String nodeName)
+	private Node getFirstChild(final Node node, final String nodeName, final boolean recursive)
 	{
 		final NodeList children = node.getChildNodes();
 		for (int i = 0; i < children.getLength(); ++i)
@@ -283,12 +288,15 @@ public class TopicImportPresenter implements Presenter
 				return child;
 		}
 
-		for (int i = 0; i < children.getLength(); ++i)
+		if (recursive)
 		{
-			final Node child = children.item(i);
-			final Node namedChild = getFirstChild(child, nodeName);
-			if (namedChild != null)
-				return namedChild;
+			for (int i = 0; i < children.getLength(); ++i)
+			{
+				final Node child = children.item(i);
+				final Node namedChild = getFirstChild(child, nodeName, recursive);
+				if (namedChild != null)
+					return namedChild;
+			}
 		}
 
 		return null;
