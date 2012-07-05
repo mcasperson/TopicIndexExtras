@@ -38,7 +38,7 @@ public class TopicImportPresenter implements Presenter
 		Widget asWidget();
 
 		TextArea getFileList();
-		
+
 		TextArea getLog();
 	}
 
@@ -81,7 +81,9 @@ public class TopicImportPresenter implements Presenter
 
 	/**
 	 * Called when all files have been processed
-	 * @param log The string holding the log
+	 * 
+	 * @param log
+	 *            The string holding the log
 	 */
 	private void processingDone(final StringBuilder log)
 	{
@@ -153,45 +155,45 @@ public class TopicImportPresenter implements Presenter
 		try
 		{
 			/* parse the XML document into a DOM */
-		    final Document doc = XMLParser.parse(result);
-		    
-		    /* what is the top level element */
-		    final Node toplevelNode = doc.getDocumentElement();
-		    
-		    /* Get the node name */
-		    final String toplevelNodeName = toplevelNode.getNodeName();
-		    
-		    /* sections can be imported directly */
-		    if (toplevelNodeName.equals("section"))
-		    {
-		    	// no processing required
-		    }
-		    /* tasks are turned into sections */
-		    else if (toplevelNodeName.equals("task"))
-		    {
-		    	replaceNodeWithSection(toplevelNode);
-		    }
-		    /* variablelist are turned into sections */
-		    else if (toplevelNodeName.equals("variablelist"))
-		    {
-		    	replaceNodeWithSection(toplevelNode);
-		    }
-		    /* Some unknown node type */
-		    else
-		    {
-		    	log.append(file.getName() + ": This topic uses an unrecognised parent node of " + toplevelNode.getNodeName() + ". No processing has been done for this topic, and the XML has been included as is.\n");
-		    	uploadFile(result, file, index, log);
-		    	return;
-		    }
-		    
-		    /* some additional validity checks */
-		    final String errors = isNodeValid(toplevelNode);
-		    
-		    if (errors != null && !errors.isEmpty())
-		    	log.append(file.getName() + ":" + errors + "\n");
-		    
-		    /* Upload the processed XML */
-		    uploadFile(doc.toString(), file, index, log);
+			final Document doc = XMLParser.parse(result);
+
+			/* what is the top level element */
+			Node toplevelNode = doc.getDocumentElement();
+
+			/* Get the node name */
+			final String toplevelNodeName = toplevelNode.getNodeName();
+
+			/* sections can be imported directly */
+			if (toplevelNodeName.equals("section"))
+			{
+				// no processing required
+			}
+			/* tasks are turned into sections */
+			else if (toplevelNodeName.equals("task"))
+			{
+				toplevelNode = replaceNodeWithSection(toplevelNode);
+			}
+			/* variablelist are turned into sections */
+			else if (toplevelNodeName.equals("variablelist"))
+			{
+				toplevelNode = replaceNodeWithSection(toplevelNode);
+			}
+			/* Some unknown node type */
+			else
+			{
+				log.append(file.getName() + ": This topic uses an unrecognised parent node of " + toplevelNodeName + ". No processing has been done for this topic, and the XML has been included as is.\n");
+				uploadFile(result, file, index, log);
+				return;
+			}
+
+			/* some additional validity checks */
+			final String errors = isNodeValid(toplevelNode);
+
+			if (errors != null && !errors.isEmpty())
+				log.append(file.getName() + ":" + errors + "\n");
+
+			/* Upload the processed XML */
+			uploadFile(toplevelNode.getOwnerDocument().toString(), file, index, log);
 
 		}
 		catch (final Exception ex)
@@ -201,7 +203,7 @@ public class TopicImportPresenter implements Presenter
 			uploadFile(result, file, index, log);
 		}
 	}
-	
+
 	private void uploadFile(final String topicXML, final File file, final int index, final StringBuilder log)
 	{
 		log.append("-------------------------------------\n");
@@ -209,53 +211,63 @@ public class TopicImportPresenter implements Presenter
 		log.append("XML Contents is:\n");
 		log.append(topicXML + "\n");
 		log.append("-------------------------------------\n");
-		
+
 		pocessFiles(index + 1, log);
 	}
-	
+
 	/**
-	 * Replace a node with a new <section> node
-	 * @param node The node to be replaced
+	 * Create a new Document with a <section> document lement node. This is to work around the lack of a Document.renameNode() method.
+	 * 
+	 * @param node
+	 *            The node to be replaced
+	 * @return The new node in a new document
 	 */
-	private void replaceNodeWithSection(final Node node)
+	private Node replaceNodeWithSection(final Node node)
 	{
-		final Node section = node.getOwnerDocument().createElement("section");
-		
+		final Document doc = XMLParser.createDocument();
+		final Node section = doc.createElement("section");
+		doc.appendChild(section);
+
 		final NodeList children = node.getChildNodes();
-		
+
 		for (int i = 0; i < children.getLength(); ++i)
 		{
 			final Node childNode = children.item(i);
-			section.appendChild(childNode);
+			final Node importedNode = doc.importNode(childNode, true);
+			section.appendChild(importedNode);
 		}
-		
-		node.getParentNode().appendChild(section);
-		node.getParentNode().removeChild(node);
+
+		return section;
 	}
-	
+
 	/**
 	 * Perform some validity checks on the topic
-	 * @param node The node that holds the topic
+	 * 
+	 * @param node
+	 *            The node that holds the topic
 	 * @return any errors that were found
 	 */
 	private String isNodeValid(final Node node)
-	{		
+	{
 		final StringBuilder builder = new StringBuilder();
-		
+
 		if (getFirstChild(node, "section") != null)
 			builder.append(" This topic has illegal nested sections.");
 		if (getFirstChild(node, "xref") != null)
 			builder.append(" This topic has illegal xrefs.");
 		if (getFirstChild(node, "xi:include") != null)
 			builder.append(" This topic has illegal xi:includes.");
-		
+
 		return builder.toString();
 	}
-	
+
 	/**
 	 * Scans a XML document for a node with the given name
-	 * @param node The node to search
-	 * @param nodeName The name of the node to find
+	 * 
+	 * @param node
+	 *            The node to search
+	 * @param nodeName
+	 *            The name of the node to find
 	 * @return null if no node is found, or the first node with the supplied name that was found
 	 */
 	private Node getFirstChild(final Node node, final String nodeName)
@@ -264,13 +276,13 @@ public class TopicImportPresenter implements Presenter
 		for (int i = 0; i < children.getLength(); ++i)
 		{
 			final Node child = children.item(i);
-			
+
 			// TODO: check URI (e.g. for xi:include)
-			
+
 			if (child.getNodeName().equals(nodeName))
 				return child;
 		}
-		
+
 		for (int i = 0; i < children.getLength(); ++i)
 		{
 			final Node child = children.item(i);
@@ -278,7 +290,7 @@ public class TopicImportPresenter implements Presenter
 			if (namedChild != null)
 				return namedChild;
 		}
-		
+
 		return null;
 	}
 
