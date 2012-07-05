@@ -28,6 +28,7 @@ import com.google.gwt.user.client.ui.Widget;
 import com.redhat.topicindex.extras.client.local.ImageUploadData;
 import com.redhat.topicindex.extras.client.local.Presenter;
 import com.redhat.topicindex.extras.client.local.RESTInterfaceV1;
+import com.redhat.topicindex.extras.client.local.utilities.GWTUtilities;
 import com.redhat.topicindex.rest.collections.RESTImageCollectionV1;
 import com.redhat.topicindex.rest.collections.RESTLanguageImageCollectionV1;
 import com.redhat.topicindex.rest.entities.interfaces.RESTImageV1;
@@ -189,72 +190,6 @@ public class BulkImageUploadPresenter implements Presenter
 		}
 	}
 
-	/**
-	 * Set the UI after the uploads are done
-	 * 
-	 * @param results
-	 *            The results to be displayed to the user.
-	 */
-	private void uploadDone(final StringBuilder results, final List<RESTImageV1> images)
-	{
-		RemoteCallback<RESTImageCollectionV1> successCallback = new RemoteCallback<RESTImageCollectionV1>()
-		{
-			@Override
-			public void callback(final RESTImageCollectionV1 retValue)
-			{
-				System.out.println("Progress [UPLOAD DONE]");
-
-				/* output a mapping of file names to image ids */
-				if (retValue.getItems() != null)
-				{
-					for (final RESTImageV1 image : retValue.getItems())
-					{
-						if (image.getLanguageImages_OTM() != null && image.getLanguageImages_OTM().getItems() != null)
-						{
-							for (final RESTLanguageImageV1 langImage : image.getLanguageImages_OTM().getItems())
-							{
-								results.append(image.getId() + ": " + langImage.getFilename() + "\n");
-							}
-						}
-					}
-				}
-
-				reEnabledUI(results);
-			}
-		};
-
-		final ErrorCallback errorCallback = new ErrorCallback()
-		{
-			@Override
-			public boolean error(Message message, Throwable throwable)
-			{
-				results.append("Upload was a failure!");
-				reEnabledUI(results);
-				return true;
-			}
-		};
-
-		final RESTImageCollectionV1 restImages = new RESTImageCollectionV1();
-		for (final RESTImageV1 image : images)
-		{
-			restImages.addItem(image);
-		}
-
-		final RESTInterfaceV1 restMethod = RestClient.create(RESTInterfaceV1.class, successCallback, errorCallback);
-
-		try
-		{
-			System.out.println("Progress [READING]: 100%");
-			System.out.println("Progress [UPLOADING]");
-			restMethod.createJSONImages(IMAGE_COLLECTION_EXPAND, restImages);
-		}
-		catch (final Exception ex)
-		{
-			results.append("Upload was a failure!\n");
-			results.append(ex.toString());
-		}
-	}
-
 	private void reEnabledUI(final StringBuilder results)
 	{
 		display.getFinalResults().setText(results.toString());
@@ -284,7 +219,7 @@ public class BulkImageUploadPresenter implements Presenter
 				final ImageUploadData block = display.getImageUploadBlocks().get(blockIndex);
 
 				final String result = reader.getStringResult();
-				final byte[] buffer = getByteArray(result, 1);
+				final byte[] buffer = GWTUtilities.getByteArray(result, 1);
 
 				langImg.explicitSetImageData(buffer);
 				langImg.explicitSetLocale(block.getLanguage().getValue(block.getLanguage().getSelectedIndex()));
@@ -366,24 +301,5 @@ public class BulkImageUploadPresenter implements Presenter
 		display.getNewLangButton().setEnabled(enabled);
 	}
 
-	/**
-	 * Replacement for String.toByteArray()
-	 * 
-	 * @param string
-	 *            The string to convert
-	 * @param bytesPerChar
-	 *            The number of bytes per character
-	 * @return the same as the standard Java String.toByteArray() method
-	 */
-	public static byte[] getByteArray(final String string, final int bytesPerChar)
-	{
-		char[] chars = string.toCharArray();
-		byte[] toReturn = new byte[chars.length * bytesPerChar];
-		for (int i = 0; i < chars.length; i++)
-		{
-			for (int j = 0; j < bytesPerChar; j++)
-				toReturn[i * bytesPerChar + j] = (byte) (chars[i] >>> (8 * (bytesPerChar - 1 - j)));
-		}
-		return toReturn;
-	}
+
 }

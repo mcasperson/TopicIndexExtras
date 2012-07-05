@@ -9,4 +9,5 @@
     <inherits name="com.redhat.topicindex.rest"/>
     <inherits name="javax.ws.rs.core"/>
     <inherits name="org.vectomatic.libgwtfile" />
+    <inherits name="com.google.gwt.xml.XML" />
 </module>

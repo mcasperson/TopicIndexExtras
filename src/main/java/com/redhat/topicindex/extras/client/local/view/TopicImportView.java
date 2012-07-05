@@ -50,12 +50,13 @@ public class TopicImportView extends Composite implements TopicImportPresenter.D
 		layoutTable.setWidget(0, 0, fileLabel);
 		layoutTable.setWidget(0, 1, upload);
 		
+		fileList.setReadOnly(true);
 		final Label selectedFilesLabel = new Label("These are the files you have selected.");
 		layoutTable.setWidget(1, 0, selectedFilesLabel);
-		layoutTable.setWidget(1, 1, getFileList());
+		layoutTable.setWidget(1, 1, fileList);
 		
-		final Label tagIds = new Label("Specify the tag ids that will be applied to the new topics.");
-		layoutTable.setWidget(2, 0, tagIds);
+		final Label tagIdsLabel = new Label("Specify the tag ids that will be applied to the new topics.");
+		layoutTable.setWidget(2, 0, tagIdsLabel);
 		layoutTable.setWidget(2, 1, tagIds);
 		
 		goButton = new Button("Go");
