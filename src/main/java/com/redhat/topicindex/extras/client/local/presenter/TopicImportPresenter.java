@@ -154,7 +154,7 @@ public class TopicImportPresenter implements Presenter
 		{
 			String fixedResult = result;
 			
-			/* remove utf-8 BOM marker (if present) */
+			/* remove utf-8 Byte Order Mark (BOM) if present */
 			if (fixedResult.startsWith("ï»¿"))
 				fixedResult = fixedResult.replaceFirst("ï»¿", "");
 			
