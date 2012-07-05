@@ -15,6 +15,7 @@ import com.google.gwt.event.shared.HandlerManager;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.HasWidgets;
 import com.google.gwt.user.client.ui.TextArea;
+import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
 import com.google.gwt.xml.client.Document;
 import com.google.gwt.xml.client.Node;
@@ -43,6 +44,8 @@ public class TopicImportPresenter implements Presenter
 		TextArea getFileList();
 
 		TextArea getLog();
+		
+		TextBox getTagIds();
 	}
 
 	@Inject
@@ -77,6 +80,7 @@ public class TopicImportPresenter implements Presenter
 			{
 				/* Start processing the files. We create a chain of methods to simulate synchronous processing */
 				final StringBuilder log = new StringBuilder();
+				enableUI(false);
 				pocessFiles(0, log);
 			}
 		});
@@ -91,6 +95,7 @@ public class TopicImportPresenter implements Presenter
 	private void processingDone(final StringBuilder log)
 	{
 		display.getLog().setText(log.toString());
+		enableUI(true);
 	}
 
 	/**
@@ -315,6 +320,13 @@ public class TopicImportPresenter implements Presenter
 		}
 
 		return null;
+	}
+	
+	private void enableUI(final boolean enabled)
+	{
+		display.getFileList().setEnabled(enabled);
+		display.getGoButton().setEnabled(enabled);
+		display.getTagIds().setEnabled(enabled);
 	}
 
 	@Override

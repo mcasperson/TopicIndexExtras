@@ -63,7 +63,7 @@ public class TopicImportView extends Composite implements TopicImportPresenter.D
 		
 		final Label tagIdsLabel = new Label("Specify the tag ids that will be applied to the new topics.");
 		layoutTable.setWidget(2, 0, tagIdsLabel);
-		layoutTable.setWidget(2, 1, tagIds);
+		layoutTable.setWidget(2, 1, getTagIds());
 		
 		log.setReadOnly(true);
 		final Label logLabel = new Label("Log");
