@@ -11,6 +11,7 @@ import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
 import com.redhat.topicindex.extras.client.local.presenter.TopicImportPresenter;
+import com.smartgwt.client.widgets.Progressbar;
 
 public class TopicImportView extends Composite implements TopicImportPresenter.Display
 {
@@ -21,7 +22,13 @@ public class TopicImportView extends Composite implements TopicImportPresenter.D
 	private final TextArea fileList = new TextArea();
 	private final TextBox tagIds = new TextBox();
 	private final TextArea log = new TextArea();
+	private final Progressbar progress = new Progressbar();
 	
+	public Progressbar getProgress()
+	{
+		return progress;
+	}
+
 	public TextArea getLog()
 	{
 		return log;
@@ -72,6 +79,8 @@ public class TopicImportView extends Composite implements TopicImportPresenter.D
 		
 		goButton = new Button("Go");
 		layoutTable.setWidget(4, 0, goButton);
+		progress.setVisible(false);
+		layoutTable.setWidget(4, 1, progress);
 		
 		contentTableDecorator.add(layoutTable);
 	}

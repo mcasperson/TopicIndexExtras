@@ -26,6 +26,7 @@ import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 
 import com.redhat.topicindex.extras.client.local.Presenter;
+import com.smartgwt.client.widgets.Progressbar;
 
 @Dependent
 public class TopicImportPresenter implements Presenter
@@ -46,6 +47,8 @@ public class TopicImportPresenter implements Presenter
 		TextArea getLog();
 		
 		TextBox getTagIds();
+		
+		Progressbar getProgress();
 	}
 
 	@Inject
@@ -108,12 +111,16 @@ public class TopicImportPresenter implements Presenter
 	 */
 	private void pocessFiles(final int index, final StringBuilder log)
 	{
-		if (index >= display.getUpload().getFiles().getLength())
+		final int numFiles = display.getUpload().getFiles().getLength();
+		
+		if (index >= numFiles)
 		{
 			processingDone(log);
 		}
 		else
 		{
+			final float percentDone = numFiles / (float)(index + 1) * 100.0f;
+			display.getProgress().setPercentDone((int)percentDone);
 			processFile(display.getUpload().getFiles().getItem(index), index, log);
 		}
 	}
@@ -328,6 +335,7 @@ public class TopicImportPresenter implements Presenter
 		display.getGoButton().setEnabled(enabled);
 		display.getTagIds().setEnabled(enabled);
 		display.getUpload().setEnabled(enabled);
+		display.getProgress().setVisible(!enabled);
 	}
 
 	@Override
