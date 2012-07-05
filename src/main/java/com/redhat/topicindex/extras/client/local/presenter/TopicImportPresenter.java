@@ -29,6 +29,9 @@ import com.redhat.topicindex.extras.client.local.Presenter;
 @Dependent
 public class TopicImportPresenter implements Presenter
 {
+	/** The UTF-8 Byte Order Marker that is present in some XML files and needs to be removed when converting the strings to XML */
+	private static final String UTF_8_BOM = "ï»¿";
+	
 	public interface Display
 	{
 		Button getGoButton();
@@ -155,8 +158,8 @@ public class TopicImportPresenter implements Presenter
 			String fixedResult = result;
 			
 			/* remove utf-8 Byte Order Mark (BOM) if present */
-			if (fixedResult.startsWith("ï»¿"))
-				fixedResult = fixedResult.replaceFirst("ï»¿", "");
+			if (fixedResult.startsWith(UTF_8_BOM))
+				fixedResult = fixedResult.replaceFirst(UTF_8_BOM, "");
 			
 			/* parse the XML document into a DOM */
 			final Document doc = XMLParser.parse(fixedResult);
@@ -210,6 +213,14 @@ public class TopicImportPresenter implements Presenter
 		}
 	}
 
+	/**
+	 * Upload the file to the REST server, and then process the next file.
+	 * 
+	 * @param topicXML The topics XML
+	 * @param file The file that was used to generate the XML
+	 * @param index The index of the file from the file load ui element
+	 * @param log The String that contains the log
+	 */
 	private void uploadFile(final String topicXML, final File file, final int index, final StringBuilder log)
 	{
 		log.append("-------------------------------------\n");
