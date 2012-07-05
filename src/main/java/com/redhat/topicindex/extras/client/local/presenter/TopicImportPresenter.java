@@ -33,7 +33,9 @@ public class TopicImportPresenter implements Presenter
 {
 	/** The UTF-8 Byte Order Marker that is present in some XML files and needs to be removed when converting the strings to XML */
 	private static final String UTF_8_BOM = "ï»¿";
-	
+	/** browsers have issues with xi:include if you don't specifically name the namespace, so we have to watch for them and not process the topics */
+	private static final String XI_INCLUDE = "xi:include";
+
 	public interface Display
 	{
 		Button getGoButton();
@@ -45,9 +47,9 @@ public class TopicImportPresenter implements Presenter
 		TextArea getFileList();
 
 		TextArea getLog();
-		
+
 		TextBox getTagIds();
-		
+
 		Progressbar getProgress();
 	}
 
@@ -112,15 +114,15 @@ public class TopicImportPresenter implements Presenter
 	private void pocessFiles(final int index, final StringBuilder log)
 	{
 		final int numFiles = display.getUpload().getFiles().getLength();
-		
+
 		if (index >= numFiles)
 		{
 			processingDone(log);
 		}
 		else
 		{
-			final float percentDone = (index + 1) / (float)numFiles * 100.0f;
-			display.getProgress().setPercentDone((int)percentDone);
+			final float percentDone = (index + 1) / (float) numFiles * 100.0f;
+			display.getProgress().setPercentDone((int) percentDone);
 			processFile(display.getUpload().getFiles().getItem(index), index, log);
 		}
 	}
@@ -167,54 +169,67 @@ public class TopicImportPresenter implements Presenter
 	{
 		try
 		{
-			String fixedResult = result;
-			
-			/* remove utf-8 Byte Order Mark (BOM) if present */
-			if (fixedResult.startsWith(UTF_8_BOM))
-				fixedResult = fixedResult.replaceFirst(UTF_8_BOM, "");
-			
-			/* parse the XML document into a DOM */
-			final Document doc = XMLParser.parse(fixedResult);
-
-			/* what is the top level element */
-			Node toplevelNode = doc.getDocumentElement();
-
-			/* Get the node name */
-			final String toplevelNodeName = toplevelNode.getNodeName();
-
-			/* sections can be imported directly */
-			if (toplevelNodeName.equals("section"))
+			/*
+			 * It is rare that an XML file will actually list the xmlns:xi="http://www.w3.org/2001/XInclude" attribute, but without it any xi:include will
+			 * prevent the XML from being parsed. So if we have any instance of xi:include, make a note and upload the file as is.
+			 */
+			if (result.indexOf(XI_INCLUDE) != -1)
 			{
-				// no processing required
+				log.append(file.getName() + ": This topic contains an xi:include, and has been uploaded as is.\n");
+				uploadFile(result, file, index, log);
 			}
-			/* tasks are turned into sections */
-			else if (toplevelNodeName.equals("task"))
-			{
-				log.append(file.getName() + ": This topic has had its document element changed from <task> to <section>.\n");
-				toplevelNode = replaceNodeWithSection(toplevelNode);
-			}
-			/* variablelist are turned into sections */
-			else if (toplevelNodeName.equals("variablelist"))
-			{
-				log.append(file.getName() + ": This topic has had its document element changed from <variablelist> to <section>.\n");
-				toplevelNode = replaceNodeWithSection(toplevelNode);
-			}
-			/* Some unknown node type */
 			else
 			{
-				log.append(file.getName() + ": This topic uses an unrecognised parent node of <" + toplevelNodeName + ">. No processing has been done for this topic, and the XML has been included as is.\n");
-				uploadFile(result, file, index, log);
-				return;
+
+				String fixedResult = result;
+
+				/* remove utf-8 Byte Order Mark (BOM) if present */
+				if (fixedResult.startsWith(UTF_8_BOM))
+					fixedResult = fixedResult.replaceFirst(UTF_8_BOM, "");
+
+				/* parse the XML document into a DOM */
+				final Document doc = XMLParser.parse(fixedResult);
+
+				/* what is the top level element */
+				Node toplevelNode = doc.getDocumentElement();
+
+				/* Get the node name */
+				final String toplevelNodeName = toplevelNode.getNodeName();
+
+				/* sections can be imported directly */
+				if (toplevelNodeName.equals("section"))
+				{
+					// no processing required
+				}
+				/* tasks are turned into sections */
+				else if (toplevelNodeName.equals("task"))
+				{
+					log.append(file.getName() + ": This topic has had its document element changed from <task> to <section>.\n");
+					toplevelNode = replaceNodeWithSection(toplevelNode);
+				}
+				/* variablelist are turned into sections */
+				else if (toplevelNodeName.equals("variablelist"))
+				{
+					log.append(file.getName() + ": This topic has had its document element changed from <variablelist> to <section>.\n");
+					toplevelNode = replaceNodeWithSection(toplevelNode);
+				}
+				/* Some unknown node type */
+				else
+				{
+					log.append(file.getName() + ": This topic uses an unrecognised parent node of <" + toplevelNodeName + ">. No processing has been done for this topic, and the XML has been included as is.\n");
+					uploadFile(result, file, index, log);
+					return;
+				}
+
+				/* some additional validity checks */
+				final String errors = isNodeValid(toplevelNode);
+
+				if (errors != null && !errors.isEmpty())
+					log.append(file.getName() + ":" + errors + "\n");
+
+				/* Upload the processed XML */
+				uploadFile(toplevelNode.getOwnerDocument().toString(), file, index, log);
 			}
-
-			/* some additional validity checks */
-			final String errors = isNodeValid(toplevelNode);
-
-			if (errors != null && !errors.isEmpty())
-				log.append(file.getName() + ":" + errors + "\n");
-
-			/* Upload the processed XML */
-			uploadFile(toplevelNode.getOwnerDocument().toString(), file, index, log);
 
 		}
 		catch (final Exception ex)
@@ -228,10 +243,14 @@ public class TopicImportPresenter implements Presenter
 	/**
 	 * Upload the file to the REST server, and then process the next file.
 	 * 
-	 * @param topicXML The topics XML
-	 * @param file The file that was used to generate the XML
-	 * @param index The index of the file from the file load ui element
-	 * @param log The String that contains the log
+	 * @param topicXML
+	 *            The topics XML
+	 * @param file
+	 *            The file that was used to generate the XML
+	 * @param index
+	 *            The index of the file from the file load ui element
+	 * @param log
+	 *            The String that contains the log
 	 */
 	private void uploadFile(final String topicXML, final File file, final int index, final StringBuilder log)
 	{
@@ -284,8 +303,6 @@ public class TopicImportPresenter implements Presenter
 			builder.append(" This topic has illegal nested sections.");
 		if (getFirstChild(node, "xref", true) != null)
 			builder.append(" This topic has illegal xrefs.");
-		if (getFirstChild(node, "xi:include", true) != null)
-			builder.append(" This topic has illegal xi:includes.");
 		if (getFirstChild(node, "title", false) == null)
 			builder.append(" This topic has no title.");
 
@@ -299,7 +316,8 @@ public class TopicImportPresenter implements Presenter
 	 *            The node to search
 	 * @param nodeName
 	 *            The name of the node to find
-	 * @param recursive true if a search is to be done on the children as well, false otherwise
+	 * @param recursive
+	 *            true if a search is to be done on the children as well, false otherwise
 	 * @return null if no node is found, or the first node with the supplied name that was found
 	 */
 	private Node getFirstChild(final Node node, final String nodeName, final boolean recursive)
@@ -328,7 +346,7 @@ public class TopicImportPresenter implements Presenter
 
 		return null;
 	}
-	
+
 	private void enableUI(final boolean enabled)
 	{
 		display.getFileList().setEnabled(enabled);
