@@ -65,16 +65,13 @@ public class BulkImageUploadPresenter implements Presenter
 		Widget asWidget();
 	}
 	
-	public BulkImageUploadPresenter ()
+	@Override
+	public void go(HasWidgets container)
 	{
 		/* Init the REST service */
 		RestClient.setApplicationRoot(REST_SERVER);
 		RestClient.setJacksonMarshallingActive(true);
-	}
-	
-	@Override
-	public void go(HasWidgets container)
-	{
+		
 		bind();
 		container.clear();
 		container.add(display.asWidget());
@@ -160,7 +157,7 @@ public class BulkImageUploadPresenter implements Presenter
 		else
 		{
 
-			RemoteCallback<RESTImageV1> successCallback = new RemoteCallback<RESTImageV1>()
+			final RemoteCallback<RESTImageV1> successCallback = new RemoteCallback<RESTImageV1>()
 			{
 				@Override
 				public void callback(final RESTImageV1 image)

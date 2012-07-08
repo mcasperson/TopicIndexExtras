@@ -3,6 +3,10 @@ package com.redhat.topicindex.extras.client.local.presenter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jboss.errai.bus.client.api.ErrorCallback;
+import org.jboss.errai.bus.client.api.Message;
+import org.jboss.errai.bus.client.api.RemoteCallback;
+import org.jboss.errai.enterprise.client.jaxrs.api.RestClient;
 import org.vectomatic.file.File;
 import org.vectomatic.file.FileReader;
 import org.vectomatic.file.FileUploadExt;
@@ -15,6 +19,7 @@ import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.shared.HandlerManager;
+import com.google.gwt.http.client.URL;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.HasWidgets;
 import com.google.gwt.user.client.ui.TextArea;
@@ -27,18 +32,41 @@ import com.google.gwt.xml.client.XMLParser;
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
+import javax.ws.rs.core.PathSegment;
 
 import com.redhat.topicindex.extras.client.local.Presenter;
+import com.redhat.topicindex.extras.client.local.RESTInterfaceV1;
+import com.redhat.topicindex.rest.collections.RESTPropertyTagCollectionV1;
+import com.redhat.topicindex.rest.collections.RESTTopicCollectionV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTImageV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTLanguageImageV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTPropertyTagV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTTopicV1;
+import com.redhat.topicindex.rest.specimpl.PathSegmentImpl;
 import com.smartgwt.client.widgets.Progressbar;
 
 @Dependent
 public class TopicImportPresenter implements Presenter
 {
+	// private static final String REST_SERVER = "http://localhost:8080/TopicIndex/seam/resource/rest";
+	private static final String REST_SERVER = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
+	// private static final String REST_SERVER = "http://skynet.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
+
+	/** Property Tag expansion string */
+	private static final String PROPERTY_TAG_EXPAND = "{\"branches\": [{\"branches\": [{\"trunk\": {\"name\": \"propertytags\"}}],\"trunk\": {\"name\": \"topics\"}}]}";
+	private static final String PROPERTY_TAG_EXPAND_ENCODED = URL.encode(PROPERTY_TAG_EXPAND);
+
+	/** The ID of the Original File Name property tag */
+	private static final int ORIGINAL_FILE_NAME_PROPERTY_TAG_ID = 28;
+
+	/** The ID of the Topic Import Errors property tag */
+	private static final int TOPIC_IMPORT_ERRORS_PROPERTY_TAG_ID = 29;
+
 	/** The UTF-8 Byte Order Marker that is present in some XML files and needs to be removed when converting the strings to XML */
 	private static final String UTF_8_BOM = "ï»¿";
 	/** browsers have issues with xi:include if you don't specifically name the namespace, so we have to watch for them and not process the topics */
 	private static final String XI_INCLUDE = "xi:include";
-	/** The name of a section XML element*/
+	/** The name of a section XML element */
 	private static final String SECTION_ELEMENT = "section";
 	/** The name of a title XML element */
 	private static final String TITLE_ELEMENT = "title";
@@ -58,6 +86,8 @@ public class TopicImportPresenter implements Presenter
 		TextBox getTagIds();
 
 		Progressbar getProgress();
+
+		TextBox getFileNamePrefix();
 	}
 
 	// @Inject
@@ -130,7 +160,7 @@ public class TopicImportPresenter implements Presenter
 		{
 			final float percentDone = (index + 1) / (float) numFiles * 100.0f;
 			display.getProgress().setPercentDone((int) percentDone);
-			processFile(display.getUpload().getFiles().getItem(index), index, log);
+			findExistingTopic(display.getUpload().getFiles().getItem(index), index, log);
 		}
 	}
 
@@ -145,7 +175,7 @@ public class TopicImportPresenter implements Presenter
 	 * @param log
 	 *            The string holding the log
 	 */
-	private void processFile(final File file, final int index, final StringBuilder log)
+	private void processFile(final RESTTopicV1 topic, final File file, final int index, final StringBuilder log)
 	{
 		final FileReader reader = new FileReader();
 
@@ -165,14 +195,14 @@ public class TopicImportPresenter implements Presenter
 			{
 				final String result = reader.getStringResult();
 
-				processXML(result, file, index, log);
+				processXML(topic, result, file, index, log);
 			}
 		});
 
 		reader.readAsBinaryString(file);
 	}
 
-	private void processXML(final String result, final File file, final int index, final StringBuilder log)
+	private void processXML(final RESTTopicV1 topic, final String result, final File file, final int index, final StringBuilder log)
 	{
 		try
 		{
@@ -190,13 +220,13 @@ public class TopicImportPresenter implements Presenter
 			{
 				final String error = "ERROR! " + file.getName() + ": This topic contains an xi:include, and has been uploaded as is.";
 				log.append(error + "\n");
-				uploadFile(fixedResult, file, index, log, error);
+				uploadFile(topic, fixedResult, file, index, log, error);
 			}
 			else
 			{
 				/* A collection to keep a hold of any import errors or warnings */
 				final List<String> errors = new ArrayList<String>();
-				
+
 				/* parse the XML document into a DOM */
 				final Document doc = XMLParser.parse(fixedResult);
 
@@ -230,7 +260,7 @@ public class TopicImportPresenter implements Presenter
 				/* examples are turned into sections */
 				else if (toplevelNodeName.equals("example"))
 				{
-					final String error = file.getName() + ": This topic has had its document element changed from <example> to <section>."; 
+					final String error = file.getName() + ": This topic has had its document element changed from <example> to <section>.";
 					log.append(error + "\n");
 					toplevelNode = replaceNodeWithSection(toplevelNode);
 					errors.add(error);
@@ -238,7 +268,7 @@ public class TopicImportPresenter implements Presenter
 				/* variablelist are turned into sections */
 				else if (toplevelNodeName.equals("variablelist"))
 				{
-					final String error = file.getName() + ": This topic has had its document element changed from <variablelist> to <section>."; 
+					final String error = file.getName() + ": This topic has had its document element changed from <variablelist> to <section>.";
 					log.append(error + "\n");
 					toplevelNode = replaceNodeWithSection(toplevelNode);
 					errors.add(error);
@@ -246,7 +276,7 @@ public class TopicImportPresenter implements Presenter
 				/* tables are wrapped in sections */
 				else if (toplevelNodeName.equals("table"))
 				{
-					final String error = file.getName() + ": This topic has had its document element of <table> wrapped in a <section>."; 
+					final String error = file.getName() + ": This topic has had its document element of <table> wrapped in a <section>.";
 					log.append(error + "\n");
 					toplevelNode = wrapNodeInSection(toplevelNode);
 					errors.add(error);
@@ -254,7 +284,7 @@ public class TopicImportPresenter implements Presenter
 				/* screens are wrapped in sections */
 				else if (toplevelNodeName.equals("screen"))
 				{
-					final String error = file.getName() + ": This topic has had its document element of <screen> wrapped in a <section>."; 
+					final String error = file.getName() + ": This topic has had its document element of <screen> wrapped in a <section>.";
 					log.append("\n");
 					toplevelNode = wrapNodeInSection(toplevelNode);
 					errors.add(error);
@@ -262,27 +292,27 @@ public class TopicImportPresenter implements Presenter
 				/* Some unknown node type */
 				else
 				{
-					final String error = "ERROR! " + file.getName() + ": This topic uses an unrecognised parent node of <" + toplevelNodeName + ">. No processing has been done for this topic, and the XML has been included as is."; 
+					final String error = "ERROR! " + file.getName() + ": This topic uses an unrecognised parent node of <" + toplevelNodeName + ">. No processing has been done for this topic, and the XML has been included as is.";
 					log.append("\n");
-					uploadFile(result, file, index, log, error);					
+					uploadFile(topic, result, file, index, log, error);
 					return;
 				}
 
 				/* some additional validity checks */
 				final String additionalErrors = isNodeValid(toplevelNode);
-				
+
 				if (errors != null && !errors.isEmpty())
 				{
 					final String error = "ERROR! " + file.getName() + ":" + additionalErrors;
-					
+
 					log.append(error + "\n");
 					errors.add(error);
 				}
-				
+
 				fixTitle(toplevelNode, file.getName());
 
 				/* Upload the processed XML */
-				uploadFile(toplevelNode.getOwnerDocument(), file, index, log, errors.toArray(new String[0]));
+				uploadFile(topic, toplevelNode.getOwnerDocument(), file, index, log, errors.toArray(new String[0]));
 			}
 
 		}
@@ -290,14 +320,17 @@ public class TopicImportPresenter implements Presenter
 		{
 			/* The xml is not valid, so upload as is */
 			log.append("ERROR! " + file.getName() + ": This topic has invalid XML, and has been uploaded as is.\n");
-			uploadFile(result, file, index, log);
+			uploadFile(topic, result, file, index, log);
 		}
 	}
-	
+
 	/**
 	 * Adds a title element to any topic that doesn't have a title
-	 * @param node The topic node
-	 * @param title The value of the title element if one is not already present
+	 * 
+	 * @param node
+	 *            The topic node
+	 * @param title
+	 *            The value of the title element if one is not already present
 	 */
 	private void fixTitle(final Node node, final String title)
 	{
@@ -305,9 +338,9 @@ public class TopicImportPresenter implements Presenter
 		{
 			final Node titleNode = node.getOwnerDocument().createElement(TITLE_ELEMENT);
 			titleNode.appendChild(node.getOwnerDocument().createTextNode(title));
-			
+
 			final NodeList children = node.getChildNodes();
-			
+
 			if (children.getLength() != 0)
 				node.insertBefore(titleNode, node.getChildNodes().item(0));
 			else
@@ -327,7 +360,7 @@ public class TopicImportPresenter implements Presenter
 	 * @param log
 	 *            The String that contains the log
 	 */
-	private void uploadFile(final String topicXML, final File file, final int index, final StringBuilder log, final String... error)
+	private void uploadFile(final RESTTopicV1 topic, final String topicXML, final File file, final int index, final StringBuilder log, final String... error)
 	{
 		log.append("-------------------------------------\n");
 		log.append("Uploaded file " + file.getName() + "\n");
@@ -335,9 +368,12 @@ public class TopicImportPresenter implements Presenter
 		log.append(topicXML + "\n");
 		log.append("-------------------------------------\n");
 
-		pocessFiles(index + 1, log);
+		topic.setXml(topicXML);
+		topic.setTitle(file.getName());
+		
+		uploadTopic(topic, file, index, log, error);
 	}
-	
+
 	/**
 	 * Upload the XML Document as a new topic to the REST server, and then process the next file.
 	 * 
@@ -350,7 +386,7 @@ public class TopicImportPresenter implements Presenter
 	 * @param log
 	 *            The String that contains the log
 	 */
-	private void uploadFile(final Document topicXML, final File file, final int index, final StringBuilder log, final String... error)
+	private void uploadFile(final RESTTopicV1 topic, final Document topicXML, final File file, final int index, final StringBuilder log, final String... error)
 	{
 		log.append("-------------------------------------\n");
 		log.append("Uploaded file " + file.getName() + "\n");
@@ -358,7 +394,141 @@ public class TopicImportPresenter implements Presenter
 		log.append(topicXML.toString() + "\n");
 		log.append("-------------------------------------\n");
 
-		pocessFiles(index + 1, log);
+		final Node titleNode = getFirstChild(topicXML.getDocumentElement(), TITLE_ELEMENT, false);
+		final String title = titleNode != null ? titleNode.getNodeValue() : file.getName(); 
+		
+		topic.setXml(topicXML.toString());
+		topic.setTitle(title);
+		
+		uploadTopic(topic, file, index, log, error);
+	}
+
+	private void findExistingTopic(final File file, final int index, final StringBuilder log)
+	{
+		final String originalFileName = display.getFileNamePrefix().getValue() + file.getName();
+
+		final RemoteCallback<RESTTopicCollectionV1> successCallback = new RemoteCallback<RESTTopicCollectionV1>()
+		{
+			@Override
+			public void callback(final RESTTopicCollectionV1 topics)
+			{
+				final int size = topics.getItems().size();
+				final RESTTopicV1 newTopic = new RESTTopicV1();
+				newTopic.explicitSetProperties(new RESTPropertyTagCollectionV1());
+
+				if (size == 0)
+				{
+					processFile(newTopic, file, index, log);
+				}
+				else if (size > 0)
+				{
+					final RESTTopicV1 existingTopic = topics.getItems().get(0);
+					newTopic.setId(existingTopic.getId());
+					newTopic.explicitSetProperties(new RESTPropertyTagCollectionV1());
+
+					/*
+					 * We set all existing property tags to be removed. These will then be re-added with any new details that may exist in the file when it is
+					 * processed again.
+					 */
+					
+					for (final RESTPropertyTagV1 propTag :  existingTopic.getProperties().getItems())						
+					{
+						final RESTPropertyTagV1 newTag = new RESTPropertyTagV1();
+						newTag.setRemoveItem(true);
+						newTag.setId(propTag.getId());
+						newTag.setValue(propTag.getValue());
+						
+						newTopic.getProperties().addItem(newTag);
+					}
+
+					if (size > 1)
+					{
+						log.append("ERROR! " + originalFileName + ": is not unique; " + size + " topics found. Updating the first topic.");
+					}
+
+					processFile(newTopic, file, index, log);
+				}
+			}
+		};
+
+		final ErrorCallback errorCallback = new ErrorCallback()
+		{
+			@Override
+			public boolean error(Message message, Throwable throwable)
+			{
+				log.append("ERROR! REST call to find existing topics failed.\n");
+
+				return true;
+			}
+		};
+
+		final RESTInterfaceV1 restMethod = RestClient.create(RESTInterfaceV1.class, successCallback, errorCallback);
+
+		try
+		{
+			final PathSegment query = new PathSegmentImpl("query;propertyTag=" + ORIGINAL_FILE_NAME_PROPERTY_TAG_ID + " " + originalFileName, false);
+			restMethod.getJSONTopicsWithQuery(query, PROPERTY_TAG_EXPAND_ENCODED);
+		}
+		catch (final Exception ex)
+		{
+			log.append("ERROR! REST call to find existing topics failed.\n");
+
+		}
+	}
+
+	private void uploadTopic(final RESTTopicV1 topic, final File file, final int index, final StringBuilder log, final String... error)
+	{
+		final RemoteCallback<RESTTopicV1> successCallback = new RemoteCallback<RESTTopicV1>()
+		{
+			@Override
+			public void callback(final RESTTopicV1 image)
+			{
+				log.append(image.getId() + ": " + file.getName() + "\n");
+				pocessFiles(index + 1, log);
+			}
+		};
+
+		final ErrorCallback errorCallback = new ErrorCallback()
+		{
+			@Override
+			public boolean error(Message message, Throwable throwable)
+			{
+				log.append("ERROR! Upload of " + file.getName() + " was a failure.\n");
+				pocessFiles(index + 1, log);
+				return true;
+			}
+		};
+
+		final RESTInterfaceV1 restMethod = RestClient.create(RESTInterfaceV1.class, successCallback, errorCallback);
+
+		try
+		{
+			/* Add the errors as property tags */
+			for (final String err : error)
+			{
+				final RESTPropertyTagV1 propTag = new RESTPropertyTagV1();
+				propTag.setId(TOPIC_IMPORT_ERRORS_PROPERTY_TAG_ID);
+				propTag.setValue(err);
+				propTag.setAddItem(true);
+				
+				topic.getProperties().addItem(propTag);
+			}
+			
+			/* Add the original file name as a property tag */
+			final String originalFileName = display.getFileNamePrefix().getValue() + file.getName();
+			final RESTPropertyTagV1 propTag = new RESTPropertyTagV1();
+			propTag.setId(ORIGINAL_FILE_NAME_PROPERTY_TAG_ID);
+			propTag.setValue(originalFileName);
+			propTag.setAddItem(true);
+			topic.getProperties().addItem(propTag);
+			
+			restMethod.createJSONTopic("", topic);
+		}
+		catch (final Exception ex)
+		{
+			log.append("ERROR! Upload of " + file.getName() + " was a failure.\n");
+			pocessFiles(index + 1, log);
+		}
 	}
 
 	/**
@@ -390,7 +560,8 @@ public class TopicImportPresenter implements Presenter
 	/**
 	 * Create a new Document with a <section> document element node that contains the the supplied node.
 	 * 
-	 * @param node The node to be wrapped in a section
+	 * @param node
+	 *            The node to be wrapped in a section
 	 * @return The new section node in the new document
 	 */
 	private Node wrapNodeInSection(final Node node)
@@ -476,6 +647,10 @@ public class TopicImportPresenter implements Presenter
 	@Override
 	public void go(final HasWidgets container)
 	{
+		/* Init the REST service */
+		RestClient.setApplicationRoot(REST_SERVER);
+		RestClient.setJacksonMarshallingActive(true);
+
 		bind();
 		container.clear();
 		container.add(display.asWidget());
