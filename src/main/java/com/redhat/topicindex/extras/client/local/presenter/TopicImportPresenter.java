@@ -35,6 +35,8 @@ public class TopicImportPresenter implements Presenter
 	private static final String UTF_8_BOM = "ï»¿";
 	/** browsers have issues with xi:include if you don't specifically name the namespace, so we have to watch for them and not process the topics */
 	private static final String XI_INCLUDE = "xi:include";
+	/** The name of a section */
+	private static final String SECTION_ELEMENT = "section";
 
 	public interface Display
 	{
@@ -53,8 +55,8 @@ public class TopicImportPresenter implements Presenter
 		Progressbar getProgress();
 	}
 
-	//@Inject
-	//private HandlerManager eventBus;
+	// @Inject
+	// private HandlerManager eventBus;
 
 	@Inject
 	private Display display;
@@ -174,7 +176,7 @@ public class TopicImportPresenter implements Presenter
 			/* remove utf-8 Byte Order Mark (BOM) if present */
 			if (fixedResult.startsWith(UTF_8_BOM))
 				fixedResult = fixedResult.replaceFirst(UTF_8_BOM, "");
-			
+
 			/*
 			 * It is rare that an XML file will actually list the xmlns:xi="http://www.w3.org/2001/XInclude" attribute, but without it any xi:include will
 			 * prevent the XML from being parsed. So if we have any instance of xi:include, make a note and upload the file as is.
@@ -227,12 +229,14 @@ public class TopicImportPresenter implements Presenter
 				/* tables are wrapped in sections */
 				else if (toplevelNodeName.equals("table"))
 				{
-					log.append(file.getName() + ": This topic has had its document element of <table> wrapped in a <section>.\n");					
+					log.append(file.getName() + ": This topic has had its document element of <table> wrapped in a <section>.\n");
+					toplevelNode = wrapNodeInSection(toplevelNode);
 				}
 				/* screens are wrapped in sections */
 				else if (toplevelNodeName.equals("screen"))
 				{
-					log.append(file.getName() + ": This topic has had its document element of <screen> wrapped in a <section>.\n");					
+					log.append(file.getName() + ": This topic has had its document element of <screen> wrapped in a <section>.\n");
+					toplevelNode = wrapNodeInSection(toplevelNode);
 				}
 				/* Some unknown node type */
 				else
@@ -285,16 +289,17 @@ public class TopicImportPresenter implements Presenter
 	}
 
 	/**
-	 * Create a new Document with a <section> document lement node. This is to work around the lack of a Document.renameNode() method.
+	 * Create a new Document with a <section> document element node that contains the children of the supplied node. This is to work around the lack of a
+	 * Document.renameNode() method.
 	 * 
 	 * @param node
 	 *            The node to be replaced
-	 * @return The new node in a new document
+	 * @return The new section node in the new document
 	 */
 	private Node replaceNodeWithSection(final Node node)
 	{
 		final Document doc = XMLParser.createDocument();
-		final Node section = doc.createElement("section");
+		final Node section = doc.createElement(SECTION_ELEMENT);
 		doc.appendChild(section);
 
 		final NodeList children = node.getChildNodes();
@@ -305,6 +310,24 @@ public class TopicImportPresenter implements Presenter
 			final Node importedNode = doc.importNode(childNode, true);
 			section.appendChild(importedNode);
 		}
+
+		return section;
+	}
+
+	/**
+	 * Create a new Document with a <section> document element node that contains the the supplied node.
+	 * 
+	 * @param node The node to be wrapped in a section
+	 * @return The new section node in the new document
+	 */
+	private Node wrapNodeInSection(final Node node)
+	{
+		final Document doc = XMLParser.createDocument();
+		final Node section = doc.createElement(SECTION_ELEMENT);
+		doc.appendChild(section);
+
+		final Node importedNode = doc.importNode(node, true);
+		section.appendChild(importedNode);
 
 		return section;
 	}
