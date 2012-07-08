@@ -274,7 +274,7 @@ public class TopicImportPresenter implements Presenter
 		if (getFirstChild(node, "title", false) == null)
 		{
 			final Node titleNode = node.getOwnerDocument().createElement(TITLE_ELEMENT);
-			titleNode.setNodeValue(title);
+			titleNode.appendChild(node.getOwnerDocument().createTextNode(title));
 			
 			final NodeList children = node.getChildNodes();
 			
