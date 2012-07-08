@@ -35,8 +35,10 @@ public class TopicImportPresenter implements Presenter
 	private static final String UTF_8_BOM = "ï»¿";
 	/** browsers have issues with xi:include if you don't specifically name the namespace, so we have to watch for them and not process the topics */
 	private static final String XI_INCLUDE = "xi:include";
-	/** The name of a section */
+	/** The name of a section XML element*/
 	private static final String SECTION_ELEMENT = "section";
+	/** The name of a title XML element */
+	private static final String TITLE_ELEMENT = "title";
 
 	public interface Display
 	{
@@ -183,7 +185,7 @@ public class TopicImportPresenter implements Presenter
 			 */
 			if (fixedResult.indexOf(XI_INCLUDE) != -1)
 			{
-				log.append(file.getName() + ": This topic contains an xi:include, and has been uploaded as is.\n");
+				log.append("ERROR! " + file.getName() + ": This topic contains an xi:include, and has been uploaded as is.\n");
 				uploadFile(fixedResult, file, index, log);
 			}
 			else
@@ -241,7 +243,7 @@ public class TopicImportPresenter implements Presenter
 				/* Some unknown node type */
 				else
 				{
-					log.append(file.getName() + ": This topic uses an unrecognised parent node of <" + toplevelNodeName + ">. No processing has been done for this topic, and the XML has been included as is.\n");
+					log.append("ERROR! " + file.getName() + ": This topic uses an unrecognised parent node of <" + toplevelNodeName + ">. No processing has been done for this topic, and the XML has been included as is.\n");
 					uploadFile(result, file, index, log);
 					return;
 				}
@@ -250,7 +252,9 @@ public class TopicImportPresenter implements Presenter
 				final String errors = isNodeValid(toplevelNode);
 
 				if (errors != null && !errors.isEmpty())
-					log.append(file.getName() + ":" + errors + "\n");
+					log.append("ERROR! " + file.getName() + ":" + errors + "\n");
+				
+				fixTitle(toplevelNode, file.getName());
 
 				/* Upload the processed XML */
 				uploadFile(toplevelNode.getOwnerDocument().toString(), file, index, log);
@@ -260,8 +264,24 @@ public class TopicImportPresenter implements Presenter
 		catch (final Exception ex)
 		{
 			/* The xml is not valid, so upload as is */
-			log.append(file.getName() + ": This topic has invalid XML, and has been uploaded as is.\n");
+			log.append("ERROR! " + file.getName() + ": This topic has invalid XML, and has been uploaded as is.\n");
 			uploadFile(result, file, index, log);
+		}
+	}
+	
+	private void fixTitle(final Node node, final String title)
+	{
+		if (getFirstChild(node, "title", false) == null)
+		{
+			final Node titleNode = node.getOwnerDocument().createElement(TITLE_ELEMENT);
+			titleNode.setNodeValue(title);
+			
+			final NodeList children = node.getChildNodes();
+			
+			if (children.getLength() != 0)
+				node.insertBefore(titleNode, node.getChildNodes().item(0));
+			else
+				node.appendChild(titleNode);
 		}
 	}
 
