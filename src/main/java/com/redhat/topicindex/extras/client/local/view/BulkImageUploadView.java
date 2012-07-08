@@ -14,7 +14,6 @@ import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
-import com.redhat.topicindex.extras.client.local.ImageUploadData;
 import com.redhat.topicindex.extras.client.local.presenter.BulkImageUploadPresenter;
 import com.smartgwt.client.widgets.Progressbar;
 

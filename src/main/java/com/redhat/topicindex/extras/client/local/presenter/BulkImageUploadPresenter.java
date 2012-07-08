@@ -11,11 +11,14 @@ import org.jboss.errai.bus.client.api.Message;
 import org.jboss.errai.bus.client.api.RemoteCallback;
 import org.jboss.errai.enterprise.client.jaxrs.api.RestClient;
 import org.vectomatic.file.File;
+import org.vectomatic.file.FileList;
 import org.vectomatic.file.FileReader;
 import org.vectomatic.file.events.ErrorHandler;
 import org.vectomatic.file.events.LoadEndEvent;
 import org.vectomatic.file.events.LoadEndHandler;
 
+import com.google.gwt.event.dom.client.ChangeEvent;
+import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.shared.HandlerManager;
@@ -25,11 +28,11 @@ import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
-import com.redhat.topicindex.extras.client.local.ImageUploadData;
 import com.redhat.topicindex.extras.client.local.Presenter;
 import com.redhat.topicindex.extras.client.local.RESTInterfaceV1;
 import com.redhat.topicindex.extras.client.local.utilities.GWTUtilities;
 import com.redhat.topicindex.extras.client.local.view.BulkImageUploadView;
+import com.redhat.topicindex.extras.client.local.view.ImageUploadData;
 import com.redhat.topicindex.rest.collections.RESTImageCollectionV1;
 import com.redhat.topicindex.rest.collections.RESTLanguageImageCollectionV1;
 import com.redhat.topicindex.rest.entities.interfaces.RESTImageV1;
@@ -87,6 +90,21 @@ public class BulkImageUploadPresenter implements Presenter
 				final ImageUploadData newBlock = new ImageUploadData();
 				display.getImageUploadBlocks().add(newBlock);
 				display.getVerticalPanel().add(newBlock.getGrid());
+				
+				newBlock.getUpload().addChangeHandler(new ChangeHandler()
+				{
+					@Override
+					public void onChange(final ChangeEvent event)
+					{
+						final FileList files = newBlock.getUpload().getFiles();
+						final StringBuilder text = new StringBuilder();
+						for (final File file : files)
+						{
+							text.append(file.getName() + "\n");
+						}
+						newBlock.getFileList().setText(text.toString());
+					}
+				});
 			}
 		});
 		

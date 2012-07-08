@@ -1,4 +1,4 @@
-package com.redhat.topicindex.extras.client.local;
+package com.redhat.topicindex.extras.client.local.view;
 
 import org.vectomatic.file.File;
 import org.vectomatic.file.FileList;
@@ -47,21 +47,6 @@ public class ImageUploadData
 		
 		for (final String locale : LOCALES)
 			language.addItem(locale);
-		
-		upload.addChangeHandler(new ChangeHandler()
-		{
-			@Override
-			public void onChange(final ChangeEvent event)
-			{
-				final FileList files = upload.getFiles();
-				final StringBuilder text = new StringBuilder();
-				for (final File file : files)
-				{
-					text.append(file.getName() + "\n");
-				}
-				fileList.setText(text.toString());
-			}
-		});
 			
 		getGrid().setWidget(0, 0, new Label("Select language for these images"));
 		getGrid().setWidget(0, 1, language);
