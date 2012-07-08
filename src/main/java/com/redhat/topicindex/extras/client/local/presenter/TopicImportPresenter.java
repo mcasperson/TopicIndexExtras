@@ -1,5 +1,8 @@
 package com.redhat.topicindex.extras.client.local.presenter;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.vectomatic.file.File;
 import org.vectomatic.file.FileReader;
 import org.vectomatic.file.FileUploadExt;
@@ -185,11 +188,15 @@ public class TopicImportPresenter implements Presenter
 			 */
 			if (fixedResult.indexOf(XI_INCLUDE) != -1)
 			{
-				log.append("ERROR! " + file.getName() + ": This topic contains an xi:include, and has been uploaded as is.\n");
-				uploadFile(fixedResult, file, index, log);
+				final String error = "ERROR! " + file.getName() + ": This topic contains an xi:include, and has been uploaded as is.";
+				log.append(error + "\n");
+				uploadFile(fixedResult, file, index, log, error);
 			}
 			else
 			{
+				/* A collection to keep a hold of any import errors or warnings */
+				final List<String> errors = new ArrayList<String>();
+				
 				/* parse the XML document into a DOM */
 				final Document doc = XMLParser.parse(fixedResult);
 
@@ -207,57 +214,75 @@ public class TopicImportPresenter implements Presenter
 				/* tasks are turned into sections */
 				else if (toplevelNodeName.equals("task"))
 				{
-					log.append(file.getName() + ": This topic has had its document element changed from <task> to <section>.\n");
+					final String error = file.getName() + ": This topic has had its document element changed from <task> to <section>.";
+					log.append(error + "\n");
 					toplevelNode = replaceNodeWithSection(toplevelNode);
+					errors.add(error);
 				}
 				/* appendicies are turned into sections */
 				else if (toplevelNodeName.equals("appendix"))
 				{
-					log.append(file.getName() + ": This topic has had its document element changed from <appendix> to <section>.\n");
+					final String error = file.getName() + ": This topic has had its document element changed from <appendix> to <section>.";
+					log.append(error + "\n");
 					toplevelNode = replaceNodeWithSection(toplevelNode);
+					errors.add(error);
 				}
 				/* examples are turned into sections */
 				else if (toplevelNodeName.equals("example"))
 				{
-					log.append(file.getName() + ": This topic has had its document element changed from <example> to <section>.\n");
+					final String error = file.getName() + ": This topic has had its document element changed from <example> to <section>."; 
+					log.append(error + "\n");
 					toplevelNode = replaceNodeWithSection(toplevelNode);
+					errors.add(error);
 				}
 				/* variablelist are turned into sections */
 				else if (toplevelNodeName.equals("variablelist"))
 				{
-					log.append(file.getName() + ": This topic has had its document element changed from <variablelist> to <section>.\n");
+					final String error = file.getName() + ": This topic has had its document element changed from <variablelist> to <section>."; 
+					log.append(error + "\n");
 					toplevelNode = replaceNodeWithSection(toplevelNode);
+					errors.add(error);
 				}
 				/* tables are wrapped in sections */
 				else if (toplevelNodeName.equals("table"))
 				{
-					log.append(file.getName() + ": This topic has had its document element of <table> wrapped in a <section>.\n");
+					final String error = file.getName() + ": This topic has had its document element of <table> wrapped in a <section>."; 
+					log.append(error + "\n");
 					toplevelNode = wrapNodeInSection(toplevelNode);
+					errors.add(error);
 				}
 				/* screens are wrapped in sections */
 				else if (toplevelNodeName.equals("screen"))
 				{
-					log.append(file.getName() + ": This topic has had its document element of <screen> wrapped in a <section>.\n");
+					final String error = file.getName() + ": This topic has had its document element of <screen> wrapped in a <section>."; 
+					log.append("\n");
 					toplevelNode = wrapNodeInSection(toplevelNode);
+					errors.add(error);
 				}
 				/* Some unknown node type */
 				else
 				{
-					log.append("ERROR! " + file.getName() + ": This topic uses an unrecognised parent node of <" + toplevelNodeName + ">. No processing has been done for this topic, and the XML has been included as is.\n");
-					uploadFile(result, file, index, log);
+					final String error = "ERROR! " + file.getName() + ": This topic uses an unrecognised parent node of <" + toplevelNodeName + ">. No processing has been done for this topic, and the XML has been included as is."; 
+					log.append("\n");
+					uploadFile(result, file, index, log, error);					
 					return;
 				}
 
 				/* some additional validity checks */
-				final String errors = isNodeValid(toplevelNode);
-
+				final String additionalErrors = isNodeValid(toplevelNode);
+				
 				if (errors != null && !errors.isEmpty())
-					log.append("ERROR! " + file.getName() + ":" + errors + "\n");
+				{
+					final String error = "ERROR! " + file.getName() + ":" + additionalErrors;
+					
+					log.append(error + "\n");
+					errors.add(error);
+				}
 				
 				fixTitle(toplevelNode, file.getName());
 
 				/* Upload the processed XML */
-				uploadFile(toplevelNode.getOwnerDocument().toString(), file, index, log);
+				uploadFile(toplevelNode.getOwnerDocument(), file, index, log, errors.toArray(new String[0]));
 			}
 
 		}
@@ -269,6 +294,11 @@ public class TopicImportPresenter implements Presenter
 		}
 	}
 	
+	/**
+	 * Adds a title element to any topic that doesn't have a title
+	 * @param node The topic node
+	 * @param title The value of the title element if one is not already present
+	 */
 	private void fixTitle(final Node node, final String title)
 	{
 		if (getFirstChild(node, "title", false) == null)
@@ -286,10 +316,10 @@ public class TopicImportPresenter implements Presenter
 	}
 
 	/**
-	 * Upload the file to the REST server, and then process the next file.
+	 * Upload the text as a new topic to the REST server, and then process the next file.
 	 * 
 	 * @param topicXML
-	 *            The topics XML
+	 *            The topic's XML
 	 * @param file
 	 *            The file that was used to generate the XML
 	 * @param index
@@ -297,12 +327,35 @@ public class TopicImportPresenter implements Presenter
 	 * @param log
 	 *            The String that contains the log
 	 */
-	private void uploadFile(final String topicXML, final File file, final int index, final StringBuilder log)
+	private void uploadFile(final String topicXML, final File file, final int index, final StringBuilder log, final String... error)
 	{
 		log.append("-------------------------------------\n");
 		log.append("Uploaded file " + file.getName() + "\n");
 		log.append("XML Contents is:\n");
 		log.append(topicXML + "\n");
+		log.append("-------------------------------------\n");
+
+		pocessFiles(index + 1, log);
+	}
+	
+	/**
+	 * Upload the XML Document as a new topic to the REST server, and then process the next file.
+	 * 
+	 * @param topicXML
+	 *            The topic's XML
+	 * @param file
+	 *            The file that was used to generate the XML
+	 * @param index
+	 *            The index of the file from the file load ui element
+	 * @param log
+	 *            The String that contains the log
+	 */
+	private void uploadFile(final Document topicXML, final File file, final int index, final StringBuilder log, final String... error)
+	{
+		log.append("-------------------------------------\n");
+		log.append("Uploaded file " + file.getName() + "\n");
+		log.append("XML Contents is:\n");
+		log.append(topicXML.toString() + "\n");
 		log.append("-------------------------------------\n");
 
 		pocessFiles(index + 1, log);
