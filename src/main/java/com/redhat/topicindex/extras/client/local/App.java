@@ -9,6 +9,7 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.shared.HandlerManager;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.RootPanel;
+import com.redhat.topicindex.extras.client.local.presenter.BulkImageUploadPresenter;
 
 @EntryPoint
 public class App
@@ -32,6 +33,7 @@ public class App
 		});
 		
 		appController.go(RootPanel.get());
+
 	}
 
 	@Produces

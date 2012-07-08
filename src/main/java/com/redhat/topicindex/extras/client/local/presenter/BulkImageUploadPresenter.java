@@ -29,6 +29,7 @@ import com.redhat.topicindex.extras.client.local.ImageUploadData;
 import com.redhat.topicindex.extras.client.local.Presenter;
 import com.redhat.topicindex.extras.client.local.RESTInterfaceV1;
 import com.redhat.topicindex.extras.client.local.utilities.GWTUtilities;
+import com.redhat.topicindex.extras.client.local.view.BulkImageUploadView;
 import com.redhat.topicindex.rest.collections.RESTImageCollectionV1;
 import com.redhat.topicindex.rest.collections.RESTLanguageImageCollectionV1;
 import com.redhat.topicindex.rest.entities.interfaces.RESTImageV1;
@@ -40,10 +41,11 @@ public class BulkImageUploadPresenter implements Presenter
 {
 	private static final String IMAGE_COLLECTION_EXPAND = "{\"branches\": [{\"trunk\": {\"name\": \"languageimages\"}}]}";
 	// private static final String REST_SERVER = "http://localhost:8080/TopicIndex/seam/resource/rest";
-	private static final String REST_SERVER = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
+	//private static final String REST_SERVER = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
+	private static final String REST_SERVER = "http://skynet.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
 	
-	@Inject
-	private HandlerManager eventBus;
+	//@Inject
+	//private HandlerManager eventBus;
 
 	@Inject
 	private Display display;

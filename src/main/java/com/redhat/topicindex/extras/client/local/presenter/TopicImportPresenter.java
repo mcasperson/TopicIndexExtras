@@ -53,8 +53,8 @@ public class TopicImportPresenter implements Presenter
 		Progressbar getProgress();
 	}
 
-	@Inject
-	private HandlerManager eventBus;
+	//@Inject
+	//private HandlerManager eventBus;
 
 	@Inject
 	private Display display;
