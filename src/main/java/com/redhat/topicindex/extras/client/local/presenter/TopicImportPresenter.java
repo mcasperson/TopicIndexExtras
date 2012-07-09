@@ -32,7 +32,6 @@ import com.google.gwt.xml.client.XMLParser;
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
-import javax.ws.rs.core.PathSegmentImpl;
 
 import com.redhat.topicindex.extras.client.local.Presenter;
 import com.redhat.topicindex.extras.client.local.RESTInterfaceV1;
@@ -297,7 +296,7 @@ public class TopicImportPresenter implements Presenter
 				/* some additional validity checks */
 				final String additionalErrors = isNodeValid(toplevelNode);
 
-				if (errors != null && !errors.isEmpty())
+				if (additionalErrors != null && !additionalErrors.isEmpty())
 				{
 					final String error = "ERROR! " + file.getName() + ":" + additionalErrors;
 
@@ -364,8 +363,8 @@ public class TopicImportPresenter implements Presenter
 		log.append(topicXML + "\n");
 		log.append("-------------------------------------\n");
 
-		topic.setXml(topicXML);
-		topic.setTitle(file.getName());
+		topic.explicitSetXml(topicXML);
+		topic.explicitSetTitle(file.getName());
 		
 		uploadTopic(topic, file, index, log, error);
 	}
@@ -391,10 +390,22 @@ public class TopicImportPresenter implements Presenter
 		log.append("-------------------------------------\n");
 
 		final Node titleNode = getFirstChild(topicXML.getDocumentElement(), TITLE_ELEMENT, false);
-		final String title = titleNode != null ? titleNode.getNodeValue() : file.getName(); 
+		String title = null;
+		if (titleNode != null)
+		{
+			final NodeList children = titleNode.getChildNodes();
+			if (children != null && children.getLength() != 0)
+			{
+				final Node titleContents = children.item(0);
+				title = titleContents.getNodeValue();
+			}			
+ 		}
 		
-		topic.setXml(topicXML.toString());
-		topic.setTitle(title);
+		if (title == null)
+			title = file.getName();
+		
+		topic.explicitSetXml(topicXML.toString());
+		topic.explicitSetTitle(title);
 		
 		uploadTopic(topic, file, index, log, error);
 	}
@@ -477,8 +488,8 @@ public class TopicImportPresenter implements Presenter
 
 		try
 		{
-			final String query = "query;propertyTag" + ORIGINAL_FILE_NAME_PROPERTY_TAG_ID + "=" + URL.encodePathSegment(originalFileName);
-			restMethod.getJSONTopicsWithQuery(new PathSegmentImpl(query), PROPERTY_TAG_EXPAND);
+			//final String query = "query;propertyTag" + ORIGINAL_FILE_NAME_PROPERTY_TAG_ID + "=" + URL.encodePathSegment(originalFileName);
+			restMethod.getJSONTopicsWithQuery(ORIGINAL_FILE_NAME_PROPERTY_TAG_ID, originalFileName , PROPERTY_TAG_EXPAND);
 		}
 		catch (final Exception ex)
 		{

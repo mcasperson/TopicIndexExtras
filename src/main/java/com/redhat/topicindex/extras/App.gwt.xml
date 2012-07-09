@@ -8,7 +8,7 @@
     <inherits name="org.jboss.errai.enterprise.CDI"/>
     <inherits name="org.jboss.errai.enterprise.Jaxrs"/> 
     <inherits name="com.redhat.topicindex.rest"/>
-    <!-- <inherits name="javax.ws.rs.core"/> -->
     <inherits name="org.vectomatic.libgwtfile" />
     <inherits name="com.google.gwt.xml.XML" />
+    <inherits name="javax.ws.rs.core"/>
 </module>
