@@ -452,10 +452,10 @@ public class TopicImportPresenter implements Presenter
 		final ErrorCallback errorCallback = new ErrorCallback()
 		{
 			@Override
-			public boolean error(Message message, Throwable throwable)
+			public boolean error(final Message message, final Throwable throwable)
 			{
 				log.append("ERROR! REST call to find existing topics failed.\n");
-
+				processingDone(log);
 				return true;
 			}
 		};
