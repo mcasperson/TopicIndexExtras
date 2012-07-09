@@ -46,12 +46,12 @@ import com.smartgwt.client.widgets.Progressbar;
 @Dependent
 public class TopicImportPresenter implements Presenter
 {
-	// private static final String REST_SERVER = "http://localhost:8080/TopicIndex/seam/resource/rest";
-	private static final String REST_SERVER = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
+	private static final String REST_SERVER = "http://localhost:8080/TopicIndex/seam/resource/rest";
+	// private static final String REST_SERVER = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
 	// private static final String REST_SERVER = "http://skynet.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
 
 	/** Property Tag expansion string */
-	private static final String PROPERTY_TAG_EXPAND = "{\"branches\": [{\"branches\": [{\"trunk\": {\"name\": \"propertytags\"}}],\"trunk\": {\"name\": \"topics\"}}]}";
+	private static final String PROPERTY_TAG_EXPAND = "{\"branches\":[{\"trunk\":{\"name\":\"topics\"},\"branches\":[{\"trunk\":{\"name\":\"properties\"}}]}]}";
 	private static final String PROPERTY_TAG_EXPAND_ENCODED = URL.encode(PROPERTY_TAG_EXPAND);
 
 	/** The ID of the Original File Name property tag */
@@ -464,8 +464,8 @@ public class TopicImportPresenter implements Presenter
 
 		try
 		{
-			final String query = "query;propertyTag=" + ORIGINAL_FILE_NAME_PROPERTY_TAG_ID + " " + originalFileName;
-			final String queryEncoded = URL.encode(query);
+			final String query = "query;propertyTag" + ORIGINAL_FILE_NAME_PROPERTY_TAG_ID + "=" + originalFileName;
+			final String queryEncoded = URL.encodePathSegment(query);
 			restMethod.getJSONTopicsWithQuery(queryEncoded, PROPERTY_TAG_EXPAND_ENCODED);
 		}
 		catch (final Exception ex)
