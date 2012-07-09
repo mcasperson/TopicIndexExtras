@@ -32,7 +32,7 @@ import com.google.gwt.xml.client.XMLParser;
 
 import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
-import javax.ws.rs.core.PathSegment;
+import javax.ws.rs.core.PathSegmentImpl;
 
 import com.redhat.topicindex.extras.client.local.Presenter;
 import com.redhat.topicindex.extras.client.local.RESTInterfaceV1;
@@ -40,7 +40,6 @@ import com.redhat.topicindex.rest.collections.RESTPropertyTagCollectionV1;
 import com.redhat.topicindex.rest.collections.RESTTopicCollectionV1;
 import com.redhat.topicindex.rest.entities.interfaces.RESTPropertyTagV1;
 import com.redhat.topicindex.rest.entities.interfaces.RESTTopicV1;
-import com.redhat.topicindex.rest.specimpl.PathSegmentImpl;
 import com.smartgwt.client.widgets.Progressbar;
 
 @Dependent
@@ -52,13 +51,12 @@ public class TopicImportPresenter implements Presenter
 
 	/** Property Tag expansion string */
 	private static final String PROPERTY_TAG_EXPAND = "{\"branches\":[{\"trunk\":{\"name\":\"topics\"},\"branches\":[{\"trunk\":{\"name\":\"properties\"}}]}]}";
-	private static final String PROPERTY_TAG_EXPAND_ENCODED = URL.encode(PROPERTY_TAG_EXPAND);
 
 	/** The ID of the Original File Name property tag */
-	private static final int ORIGINAL_FILE_NAME_PROPERTY_TAG_ID = 28;
+	private static final Integer ORIGINAL_FILE_NAME_PROPERTY_TAG_ID = 28;
 
 	/** The ID of the Topic Import Errors property tag */
-	private static final int TOPIC_IMPORT_ERRORS_PROPERTY_TAG_ID = 29;
+	private static final Integer TOPIC_IMPORT_ERRORS_PROPERTY_TAG_ID = 29;
 
 	/** The UTF-8 Byte Order Marker that is present in some XML files and needs to be removed when converting the strings to XML */
 	private static final String UTF_8_BOM = "ï»¿";
@@ -420,7 +418,22 @@ public class TopicImportPresenter implements Presenter
 				}
 				else if (size > 0)
 				{
-					final RESTTopicV1 existingTopic = topics.getItems().get(0);
+					RESTTopicV1 existingTopic = topics.getItems().get(0);
+					
+					/* Make sure the query actually returned a valid topic. We don't want to overwrite an existing topic based on a bad query. */
+					boolean foundOriginalFileNameTag = false;
+					for (final RESTPropertyTagV1 propTag : existingTopic.getProperties().getItems())
+					{
+						if (ORIGINAL_FILE_NAME_PROPERTY_TAG_ID.equals(propTag.getId()) && originalFileName.equals(propTag.getValue()))
+						{
+							foundOriginalFileNameTag = true;
+							break;
+						}
+					}
+					
+					if (!foundOriginalFileNameTag)
+						existingTopic = new RESTTopicV1();
+					
 					newTopic.setId(existingTopic.getId());
 					newTopic.explicitSetProperties(new RESTPropertyTagCollectionV1());
 
@@ -464,9 +477,8 @@ public class TopicImportPresenter implements Presenter
 
 		try
 		{
-			final String query = "query;propertyTag" + ORIGINAL_FILE_NAME_PROPERTY_TAG_ID + "=" + originalFileName;
-			final String queryEncoded = URL.encodePathSegment(query);
-			restMethod.getJSONTopicsWithQuery(queryEncoded, PROPERTY_TAG_EXPAND_ENCODED);
+			final String query = "query;propertyTag" + ORIGINAL_FILE_NAME_PROPERTY_TAG_ID + "=" + URL.encodePathSegment(originalFileName);
+			restMethod.getJSONTopicsWithQuery(new PathSegmentImpl(query), PROPERTY_TAG_EXPAND);
 		}
 		catch (final Exception ex)
 		{
