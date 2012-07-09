@@ -1276,7 +1276,7 @@ public interface RESTInterfaceV1
 	@Path("/topics/get/json/{query}")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes({ "*" })
-	public RESTTopicCollectionV1 getJSONTopicsWithQuery(@PathParam("query") PathSegment query, @QueryParam("expand") final String expand) throws InvalidParameterException, InternalProcessingException;
+	public RESTTopicCollectionV1 getJSONTopicsWithQuery(@PathParam("query") String query, @QueryParam("expand") final String expand) throws InvalidParameterException, InternalProcessingException;
 	
 	@GET
 	@Path("/topics/get/xml/all")

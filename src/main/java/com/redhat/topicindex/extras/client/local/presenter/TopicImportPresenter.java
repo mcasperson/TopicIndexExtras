@@ -38,8 +38,6 @@ import com.redhat.topicindex.extras.client.local.Presenter;
 import com.redhat.topicindex.extras.client.local.RESTInterfaceV1;
 import com.redhat.topicindex.rest.collections.RESTPropertyTagCollectionV1;
 import com.redhat.topicindex.rest.collections.RESTTopicCollectionV1;
-import com.redhat.topicindex.rest.entities.interfaces.RESTImageV1;
-import com.redhat.topicindex.rest.entities.interfaces.RESTLanguageImageV1;
 import com.redhat.topicindex.rest.entities.interfaces.RESTPropertyTagV1;
 import com.redhat.topicindex.rest.entities.interfaces.RESTTopicV1;
 import com.redhat.topicindex.rest.specimpl.PathSegmentImpl;
@@ -466,13 +464,14 @@ public class TopicImportPresenter implements Presenter
 
 		try
 		{
-			final PathSegment query = new PathSegmentImpl("query;propertyTag=" + ORIGINAL_FILE_NAME_PROPERTY_TAG_ID + " " + originalFileName, false);
-			restMethod.getJSONTopicsWithQuery(query, PROPERTY_TAG_EXPAND_ENCODED);
+			final String query = "query;propertyTag=" + ORIGINAL_FILE_NAME_PROPERTY_TAG_ID + " " + originalFileName;
+			final String queryEncoded = URL.encode(query);
+			restMethod.getJSONTopicsWithQuery(queryEncoded, PROPERTY_TAG_EXPAND_ENCODED);
 		}
 		catch (final Exception ex)
 		{
 			log.append("ERROR! REST call to find existing topics failed.\n");
-
+			processingDone(log);
 		}
 	}
 
