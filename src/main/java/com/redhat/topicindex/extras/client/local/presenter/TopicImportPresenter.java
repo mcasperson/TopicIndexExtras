@@ -365,7 +365,7 @@ public class TopicImportPresenter implements Presenter
 
 		topic.explicitSetXml(topicXML);
 		topic.explicitSetTitle(file.getName());
-		
+
 		uploadTopic(topic, file, index, log, error);
 	}
 
@@ -399,14 +399,14 @@ public class TopicImportPresenter implements Presenter
 				final Node child = children.item(i);
 				title += child.toString();
 			}
- 		}
-		
+		}
+
 		if (title.isEmpty())
 			title = file.getName();
-		
+
 		topic.explicitSetXml(topicXML.toString());
 		topic.explicitSetTitle(title);
-		
+
 		uploadTopic(topic, file, index, log, error);
 	}
 
@@ -420,10 +420,10 @@ public class TopicImportPresenter implements Presenter
 			public void callback(final RESTTopicCollectionV1 topics)
 			{
 				final int size = topics.getItems().size();
-				
-				final RESTTopicV1 newTopic = new RESTTopicV1();	
+
+				final RESTTopicV1 newTopic = new RESTTopicV1();
 				newTopic.explicitSetProperties(new RESTPropertyTagCollectionV1());
-						
+
 				if (size == 0)
 				{
 					processFile(newTopic, file, index, log);
@@ -431,7 +431,7 @@ public class TopicImportPresenter implements Presenter
 				else if (size > 0)
 				{
 					RESTTopicV1 existingTopic = topics.getItems().get(0);
-					
+
 					/* Make sure the query actually returned a valid topic. We don't want to overwrite an existing topic based on a bad query. */
 					boolean foundOriginalFileNameTag = false;
 					for (final RESTPropertyTagV1 propTag : existingTopic.getProperties().getItems())
@@ -442,29 +442,29 @@ public class TopicImportPresenter implements Presenter
 							break;
 						}
 					}
-					
+
 					if (foundOriginalFileNameTag)
-					{					
+					{
 						newTopic.setId(existingTopic.getId());
-	
+
 						/*
-						 * We set all existing property tags to be removed. These will then be re-added with any new details that may exist in the file when it is
-						 * processed again.
+						 * We set all existing property tags to be removed. These will then be re-added with any new details that may exist in the file when it
+						 * is processed again.
 						 */
-						
-						for (final RESTPropertyTagV1 propTag : existingTopic.getProperties().getItems())						
+
+						for (final RESTPropertyTagV1 propTag : existingTopic.getProperties().getItems())
 						{
 							final RESTPropertyTagV1 newTag = new RESTPropertyTagV1();
 							newTag.setRemoveItem(true);
 							newTag.setId(propTag.getId());
 							newTag.setValue(propTag.getValue());
-							
+
 							newTopic.getProperties().addItem(newTag);
 						}
-	
+
 						if (size > 1)
 						{
-							log.append("ERROR! " + originalFileName + ": is not unique; " + size + " topics found. Updating the first topic.");
+							log.append("ERROR! " + originalFileName + ": is not unique; " + size + " topics found. Updating the first topic.\n");
 						}
 					}
 
@@ -488,8 +488,8 @@ public class TopicImportPresenter implements Presenter
 
 		try
 		{
-			//final String query = "query;propertyTag" + ORIGINAL_FILE_NAME_PROPERTY_TAG_ID + "=" + URL.encodePathSegment(originalFileName);
-			restMethod.getJSONTopicsWithQuery(ORIGINAL_FILE_NAME_PROPERTY_TAG_ID, originalFileName , PROPERTY_TAG_EXPAND);
+			// final String query = "query;propertyTag" + ORIGINAL_FILE_NAME_PROPERTY_TAG_ID + "=" + URL.encodePathSegment(originalFileName);
+			restMethod.getJSONTopicsWithQuery(ORIGINAL_FILE_NAME_PROPERTY_TAG_ID, originalFileName, PROPERTY_TAG_EXPAND);
 		}
 		catch (final Exception ex)
 		{
@@ -532,10 +532,10 @@ public class TopicImportPresenter implements Presenter
 				propTag.setId(TOPIC_IMPORT_ERRORS_PROPERTY_TAG_ID);
 				propTag.setValue(err);
 				propTag.setAddItem(true);
-				
+
 				topic.getProperties().addItem(propTag);
 			}
-			
+
 			/* Add the original file name as a property tag */
 			final String originalFileName = display.getFileNamePrefix().getValue() + file.getName();
 			final RESTPropertyTagV1 propTag = new RESTPropertyTagV1();
@@ -543,11 +543,13 @@ public class TopicImportPresenter implements Presenter
 			propTag.setValue(originalFileName);
 			propTag.setAddItem(true);
 			topic.getProperties().addItem(propTag);
-			
+
+			/* If the topic id is not null, it means we found an existing topic with the same original file name. In this case, we update the existing topic. */
 			if (topic.getId() != null)
-				restMethod.createJSONTopic("", topic);
-			else
 				restMethod.updateJSONTopic("", topic);
+			/* Otherwise we create a new topic */
+			else
+				restMethod.createJSONTopic("", topic);
 		}
 		catch (final Exception ex)
 		{
