@@ -390,18 +390,18 @@ public class TopicImportPresenter implements Presenter
 		log.append("-------------------------------------\n");
 
 		final Node titleNode = getFirstChild(topicXML.getDocumentElement(), TITLE_ELEMENT, false);
-		String title = null;
+		String title = "";
 		if (titleNode != null)
 		{
 			final NodeList children = titleNode.getChildNodes();
-			if (children != null && children.getLength() != 0)
+			for (int i = 0; i < children.getLength(); ++i)
 			{
-				final Node titleContents = children.item(0);
-				title = titleContents.getNodeValue();
-			}			
+				final Node child = children.item(i);
+				title += child.toString();
+			}
  		}
 		
-		if (title == null)
+		if (title.isEmpty())
 			title = file.getName();
 		
 		topic.explicitSetXml(topicXML.toString());
@@ -420,9 +420,10 @@ public class TopicImportPresenter implements Presenter
 			public void callback(final RESTTopicCollectionV1 topics)
 			{
 				final int size = topics.getItems().size();
-				final RESTTopicV1 newTopic = new RESTTopicV1();
+				
+				final RESTTopicV1 newTopic = new RESTTopicV1();	
 				newTopic.explicitSetProperties(new RESTPropertyTagCollectionV1());
-
+						
 				if (size == 0)
 				{
 					processFile(newTopic, file, index, log);
@@ -442,30 +443,29 @@ public class TopicImportPresenter implements Presenter
 						}
 					}
 					
-					if (!foundOriginalFileNameTag)
-						existingTopic = new RESTTopicV1();
-					
-					newTopic.setId(existingTopic.getId());
-					newTopic.explicitSetProperties(new RESTPropertyTagCollectionV1());
-
-					/*
-					 * We set all existing property tags to be removed. These will then be re-added with any new details that may exist in the file when it is
-					 * processed again.
-					 */
-					
-					for (final RESTPropertyTagV1 propTag : existingTopic.getProperties().getItems())						
-					{
-						final RESTPropertyTagV1 newTag = new RESTPropertyTagV1();
-						newTag.setRemoveItem(true);
-						newTag.setId(propTag.getId());
-						newTag.setValue(propTag.getValue());
+					if (foundOriginalFileNameTag)
+					{					
+						newTopic.setId(existingTopic.getId());
+	
+						/*
+						 * We set all existing property tags to be removed. These will then be re-added with any new details that may exist in the file when it is
+						 * processed again.
+						 */
 						
-						newTopic.getProperties().addItem(newTag);
-					}
-
-					if (size > 1)
-					{
-						log.append("ERROR! " + originalFileName + ": is not unique; " + size + " topics found. Updating the first topic.");
+						for (final RESTPropertyTagV1 propTag : existingTopic.getProperties().getItems())						
+						{
+							final RESTPropertyTagV1 newTag = new RESTPropertyTagV1();
+							newTag.setRemoveItem(true);
+							newTag.setId(propTag.getId());
+							newTag.setValue(propTag.getValue());
+							
+							newTopic.getProperties().addItem(newTag);
+						}
+	
+						if (size > 1)
+						{
+							log.append("ERROR! " + originalFileName + ": is not unique; " + size + " topics found. Updating the first topic.");
+						}
 					}
 
 					processFile(newTopic, file, index, log);
@@ -544,7 +544,10 @@ public class TopicImportPresenter implements Presenter
 			propTag.setAddItem(true);
 			topic.getProperties().addItem(propTag);
 			
-			restMethod.createJSONTopic("", topic);
+			if (topic.getId() != null)
+				restMethod.createJSONTopic("", topic);
+			else
+				restMethod.updateJSONTopic("", topic);
 		}
 		catch (final Exception ex)
 		{
