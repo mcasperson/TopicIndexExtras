@@ -453,7 +453,7 @@ public class TopicImportPresenter implements Presenter
 					 * processed again.
 					 */
 					
-					for (final RESTPropertyTagV1 propTag :  existingTopic.getProperties().getItems())						
+					for (final RESTPropertyTagV1 propTag : existingTopic.getProperties().getItems())						
 					{
 						final RESTPropertyTagV1 newTag = new RESTPropertyTagV1();
 						newTag.setRemoveItem(true);
