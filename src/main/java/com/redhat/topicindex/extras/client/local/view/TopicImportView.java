@@ -80,7 +80,7 @@ public class TopicImportView extends Composite implements TopicImportPresenter.D
 		layoutTable.setWidget(2, 0, selectedFilesLabel);
 		layoutTable.setWidget(2, 1, fileList);
 		
-		final Label tagIdsLabel = new Label("Specify the tag ids that will be applied to the new topics.");
+		final Label tagIdsLabel = new Label("Specify the tag ids that will be applied to the new topics. This is a space seperated list of integers.");
 		layoutTable.setWidget(3, 0, tagIdsLabel);
 		layoutTable.setWidget(3, 1, getTagIds());
 		
