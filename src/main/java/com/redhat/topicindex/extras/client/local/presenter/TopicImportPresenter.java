@@ -89,6 +89,10 @@ public class TopicImportPresenter implements Presenter
 		Progressbar getProgress();
 
 		TextBox getFileNamePrefix();
+		
+		TextArea getTopicDetails();
+		
+		TextArea getTopicErrors();
 	}
 
 	// @Inject
@@ -123,11 +127,13 @@ public class TopicImportPresenter implements Presenter
 			{
 				/* Start processing the files. We create a chain of methods to simulate synchronous processing */
 				final StringBuilder log = new StringBuilder();
+				final StringBuilder topicDetails = new StringBuilder();
+				final StringBuilder topicErrors = new StringBuilder();
 				enableUI(false);
 				try
 				{
 					final List<Integer> tagIds = getTagIds();
-					pocessFiles(0, log, tagIds);
+					pocessFiles(0, log, topicDetails, topicErrors, tagIds);
 				}
 				catch (final InputFormatException ex)
 				{
@@ -184,7 +190,7 @@ public class TopicImportPresenter implements Presenter
 	 * @param log
 	 *            The string holding the log
 	 */
-	private void pocessFiles(final int index, final StringBuilder log, final List<Integer> tagIds)
+	private void pocessFiles(final int index, final StringBuilder log, final StringBuilder topicDetails, final StringBuilder topicErrors, final List<Integer> tagIds)
 	{
 		final int numFiles = display.getUpload().getFiles().getLength();
 
@@ -196,7 +202,7 @@ public class TopicImportPresenter implements Presenter
 		{
 			final float percentDone = (index + 1) / (float) numFiles * 100.0f;
 			display.getProgress().setPercentDone((int) percentDone);
-			findExistingTopic(display.getUpload().getFiles().getItem(index), index, log, tagIds);
+			findExistingTopic(display.getUpload().getFiles().getItem(index), index, log, topicDetails, topicErrors, tagIds);
 		}
 	}
 
@@ -211,7 +217,7 @@ public class TopicImportPresenter implements Presenter
 	 * @param log
 	 *            The string holding the log
 	 */
-	private void processFile(final RESTTopicV1 topic, final File file, final int index, final StringBuilder log, final List<Integer> tagIds)
+	private void processFile(final RESTTopicV1 topic, final File file, final int index, final StringBuilder log, final StringBuilder topicDetails, final StringBuilder topicErrors, final List<Integer> tagIds)
 	{
 		final FileReader reader = new FileReader();
 
@@ -220,7 +226,7 @@ public class TopicImportPresenter implements Presenter
 			@Override
 			public void onError(final org.vectomatic.file.events.ErrorEvent event)
 			{
-				pocessFiles(index + 1, log, tagIds);
+				pocessFiles(index + 1, log, topicDetails, topicErrors, tagIds);
 			}
 		});
 
@@ -231,14 +237,14 @@ public class TopicImportPresenter implements Presenter
 			{
 				final String result = reader.getStringResult();
 
-				processXML(topic, result, file, index, log, tagIds);
+				processXML(topic, result, file, index, log, topicDetails, topicErrors, tagIds);
 			}
 		});
 
 		reader.readAsBinaryString(file);
 	}
 
-	private void processXML(final RESTTopicV1 topic, final String result, final File file, final int index, final StringBuilder log, final List<Integer> tagIds)
+	private void processXML(final RESTTopicV1 topic, final String result, final File file, final int index, final StringBuilder log, final StringBuilder topicDetails, final StringBuilder topicErrors, final List<Integer> tagIds)
 	{
 		try
 		{
@@ -256,7 +262,7 @@ public class TopicImportPresenter implements Presenter
 			{
 				final String error = "ERROR! " + file.getName() + ": This topic contains an xi:include, and has been uploaded as is.";
 				log.append(error + "\n");
-				uploadFile(topic, fixedResult, file, index, log, tagIds, error);
+				uploadFile(topic, fixedResult, file, index, log, topicDetails, topicErrors, tagIds, error);
 			}
 			else
 			{
@@ -330,7 +336,7 @@ public class TopicImportPresenter implements Presenter
 				{
 					final String error = "ERROR! " + file.getName() + ": This topic uses an unrecognised parent node of <" + toplevelNodeName + ">. No processing has been done for this topic, and the XML has been included as is.";
 					log.append("\n");
-					uploadFile(topic, result, file, index, log, tagIds, error);
+					uploadFile(topic, result, file, index, log, topicDetails, topicErrors, tagIds, error);
 					return;
 				}
 
@@ -348,7 +354,7 @@ public class TopicImportPresenter implements Presenter
 				fixTitle(toplevelNode, file.getName());
 
 				/* Upload the processed XML */
-				uploadFile(topic, toplevelNode.getOwnerDocument(), file, index, log, tagIds, errors.toArray(new String[0]));
+				uploadFile(topic, toplevelNode.getOwnerDocument(), file, index, log, topicDetails, topicErrors, tagIds, errors.toArray(new String[0]));
 			}
 
 		}
@@ -356,7 +362,7 @@ public class TopicImportPresenter implements Presenter
 		{
 			/* The xml is not valid, so upload as is */
 			log.append("ERROR! " + file.getName() + ": This topic has invalid XML, and has been uploaded as is.\n");
-			uploadFile(topic, result, file, index, log, tagIds);
+			uploadFile(topic, result, file, index, log, topicDetails, topicErrors, tagIds);
 		}
 	}
 
@@ -396,7 +402,7 @@ public class TopicImportPresenter implements Presenter
 	 * @param log
 	 *            The String that contains the log
 	 */
-	private void uploadFile(final RESTTopicV1 topic, final String topicXML, final File file, final int index, final StringBuilder log, final List<Integer> tagIds, final String... error)
+	private void uploadFile(final RESTTopicV1 topic, final String topicXML, final File file, final int index, final StringBuilder log, final StringBuilder topicDetails, final StringBuilder topicErrors, final List<Integer> tagIds, final String... error)
 	{
 		log.append("-------------------------------------\n");
 		log.append("Uploaded file " + file.getName() + "\n");
@@ -407,7 +413,7 @@ public class TopicImportPresenter implements Presenter
 		topic.explicitSetXml(topicXML);
 		topic.explicitSetTitle(file.getName());
 
-		uploadTopic(topic, file, index, log, tagIds, error);
+		uploadTopic(topic, file, index, log, topicDetails, topicErrors, tagIds, error);
 	}
 
 	/**
@@ -422,7 +428,7 @@ public class TopicImportPresenter implements Presenter
 	 * @param log
 	 *            The String that contains the log
 	 */
-	private void uploadFile(final RESTTopicV1 topic, final Document topicXML, final File file, final int index, final StringBuilder log, final List<Integer> tagIds, final String... error)
+	private void uploadFile(final RESTTopicV1 topic, final Document topicXML, final File file, final int index, final StringBuilder log, final StringBuilder topicDetails, final StringBuilder topicErrors, final List<Integer> tagIds, final String... error)
 	{
 		log.append("-------------------------------------\n");
 		log.append("Uploaded file " + file.getName() + "\n");
@@ -448,10 +454,10 @@ public class TopicImportPresenter implements Presenter
 		topic.explicitSetXml(topicXML.toString());
 		topic.explicitSetTitle(title);
 
-		uploadTopic(topic, file, index, log, tagIds, error);
+		uploadTopic(topic, file, index, log, topicDetails, topicErrors, tagIds, error);
 	}
 
-	private void findExistingTopic(final File file, final int index, final StringBuilder log, final List<Integer> tagIds)
+	private void findExistingTopic(final File file, final int index, final StringBuilder log, final StringBuilder topicDetails, final StringBuilder topicErrors, final List<Integer> tagIds)
 	{
 		final String originalFileName = display.getFileNamePrefix().getValue() + file.getName();
 
@@ -468,7 +474,7 @@ public class TopicImportPresenter implements Presenter
 
 				if (size == 0)
 				{
-					processFile(newTopic, file, index, log, tagIds);
+					processFile(newTopic, file, index, log, topicDetails, topicErrors, tagIds);
 				}
 				else if (size > 0)
 				{
@@ -520,7 +526,7 @@ public class TopicImportPresenter implements Presenter
 						}
 					}
 
-					processFile(newTopic, file, index, log, tagIds);
+					processFile(newTopic, file, index, log, topicDetails, topicErrors, tagIds);
 				}
 			}
 		};
@@ -550,7 +556,7 @@ public class TopicImportPresenter implements Presenter
 		}
 	}
 
-	private void uploadTopic(final RESTTopicV1 topic, final File file, final int index, final StringBuilder log, final List<Integer> tagIds, final String... error)
+	private void uploadTopic(final RESTTopicV1 topic, final File file, final int index, final StringBuilder log, final StringBuilder topicDetails, final StringBuilder topicErrors, final List<Integer> tagIds, final String... error)
 	{
 		final RemoteCallback<RESTTopicV1> successCallback = new RemoteCallback<RESTTopicV1>()
 		{
@@ -558,7 +564,7 @@ public class TopicImportPresenter implements Presenter
 			public void callback(final RESTTopicV1 image)
 			{
 				log.append(image.getId() + ": " + file.getName() + "\n");
-				pocessFiles(index + 1, log, tagIds);
+				pocessFiles(index + 1, log, topicDetails, topicErrors, tagIds);
 			}
 		};
 
@@ -568,7 +574,7 @@ public class TopicImportPresenter implements Presenter
 			public boolean error(Message message, Throwable throwable)
 			{
 				log.append("ERROR! Upload of " + file.getName() + " was a failure.\n");
-				pocessFiles(index + 1, log, tagIds);
+				pocessFiles(index + 1, log, topicDetails, topicErrors, tagIds);
 				return true;
 			}
 		};
@@ -615,7 +621,7 @@ public class TopicImportPresenter implements Presenter
 		catch (final Exception ex)
 		{
 			log.append("ERROR! Upload of " + file.getName() + " was a failure.\n");
-			pocessFiles(index + 1, log, tagIds);
+			pocessFiles(index + 1, log, topicDetails, topicErrors, tagIds);
 		}
 	}
 

@@ -22,9 +22,16 @@ public class TopicImportView extends Composite implements TopicImportPresenter.D
 	private final TextArea fileList = new TextArea();
 	private final TextBox tagIds = new TextBox();
 	private final TextArea log = new TextArea();
+	private final TextArea topicDetails = new TextArea();
+	private final TextArea topicErrors = new TextArea();
 	private final Progressbar progress = new Progressbar();
 	private final TextBox fileNamePrefix = new TextBox();
 	
+	public TextArea getTopicDetails()
+	{
+		return topicDetails;
+	}
+
 	public TextBox getFileNamePrefix()
 	{
 		return fileNamePrefix;
@@ -113,6 +120,11 @@ public class TopicImportView extends Composite implements TopicImportPresenter.D
 	public TextBox getTagIds()
 	{
 		return tagIds;
+	}
+
+	public TextArea getTopicErrors()
+	{
+		return topicErrors;
 	}
 
 
