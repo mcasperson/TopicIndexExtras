@@ -198,7 +198,7 @@ public class TopicImportPresenter implements Presenter
 
 		if (index >= numFiles)
 		{
-			processingDone(log);
+			processingDone(log, topicDetails, topicErrors);
 		}
 		else
 		{
@@ -565,7 +565,7 @@ public class TopicImportPresenter implements Presenter
 			final String error = "ERROR! REST call to find existing topics failed."; 
 			log.append(error + "n");
 			topicErrors.append(error + "\n");
-			processingDone(log);
+			processingDone(log, topicDetails, topicErrors);
 		}
 	}
 
