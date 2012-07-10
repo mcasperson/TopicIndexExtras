@@ -318,6 +318,14 @@ public class TopicImportPresenter implements Presenter
 					toplevelNode = replaceNodeWithSection(toplevelNode);
 					errors.add(error);
 				}
+				/* formalparas are turned into sections */
+				else if (toplevelNodeName.equals("formalpara"))
+				{
+					final String error = file.getName() + ": This topic has had its document element changed from <formalpara> to <section>.";
+					log.append(error + "\n");
+					toplevelNode = replaceNodeWithSection(toplevelNode);
+					errors.add(error);
+				}
 				/* tables are wrapped in sections */
 				else if (toplevelNodeName.equals("table"))
 				{
