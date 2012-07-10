@@ -176,9 +176,11 @@ public class TopicImportPresenter implements Presenter
 	 * @param log
 	 *            The string holding the log
 	 */
-	private void processingDone(final StringBuilder log)
+	private void processingDone(final StringBuilder log, final StringBuilder topicDetails, final StringBuilder topicErrors)
 	{
 		display.getLog().setText(log.toString());
+		display.getTopicDetails().setText(topicDetails.toString());
+		display.getTopicErrors().setText(topicErrors.toString());
 		enableUI(true);
 	}
 
@@ -262,6 +264,7 @@ public class TopicImportPresenter implements Presenter
 			{
 				final String error = "ERROR! " + file.getName() + ": This topic contains an xi:include, and has been uploaded as is.";
 				log.append(error + "\n");
+				topicErrors.append(error + "\n");
 				uploadFile(topic, fixedResult, file, index, log, topicDetails, topicErrors, tagIds, error);
 			}
 			else
@@ -335,7 +338,8 @@ public class TopicImportPresenter implements Presenter
 				else
 				{
 					final String error = "ERROR! " + file.getName() + ": This topic uses an unrecognised parent node of <" + toplevelNodeName + ">. No processing has been done for this topic, and the XML has been included as is.";
-					log.append("\n");
+					log.append(error + "\n");
+					topicErrors.append(error + "\n");
 					uploadFile(topic, result, file, index, log, topicDetails, topicErrors, tagIds, error);
 					return;
 				}
@@ -348,6 +352,7 @@ public class TopicImportPresenter implements Presenter
 					final String error = "ERROR! " + file.getName() + ":" + additionalErrors;
 
 					log.append(error + "\n");
+					topicErrors.append(error + "\n");
 					errors.add(error);
 				}
 
@@ -361,7 +366,9 @@ public class TopicImportPresenter implements Presenter
 		catch (final Exception ex)
 		{
 			/* The xml is not valid, so upload as is */
-			log.append("ERROR! " + file.getName() + ": This topic has invalid XML, and has been uploaded as is.\n");
+			final String error = "ERROR! " + file.getName() + ": This topic has invalid XML, and has been uploaded as is."; 
+			log.append(error + "\n");
+			topicErrors.append(error + "\n");
 			uploadFile(topic, result, file, index, log, topicDetails, topicErrors, tagIds);
 		}
 	}
@@ -522,7 +529,9 @@ public class TopicImportPresenter implements Presenter
 
 						if (size > 1)
 						{
-							log.append("ERROR! " + originalFileName + ": is not unique; " + size + " topics found. Updating the first topic.\n");
+							final String error = "ERROR! " + originalFileName + ": is not unique; " + size + " topics found. Updating the first topic.";
+							log.append(error + "\n");
+							topicErrors.append(error + "\n");
 						}
 					}
 
@@ -536,8 +545,10 @@ public class TopicImportPresenter implements Presenter
 			@Override
 			public boolean error(final Message message, final Throwable throwable)
 			{
-				log.append("ERROR! REST call to find existing topics failed.\n");
-				processingDone(log);
+				final String error = "ERROR! REST call to find existing topics failed.";
+				log.append(error + "\n");
+				topicErrors.append(error + "\n");
+				processingDone(log, topicDetails, topicErrors);
 				return true;
 			}
 		};
@@ -551,7 +562,9 @@ public class TopicImportPresenter implements Presenter
 		}
 		catch (final Exception ex)
 		{
-			log.append("ERROR! REST call to find existing topics failed.\n");
+			final String error = "ERROR! REST call to find existing topics failed."; 
+			log.append(error + "n");
+			topicErrors.append(error + "\n");
 			processingDone(log);
 		}
 	}
@@ -563,7 +576,9 @@ public class TopicImportPresenter implements Presenter
 			@Override
 			public void callback(final RESTTopicV1 image)
 			{
-				log.append(image.getId() + ": " + file.getName() + "\n");
+				final String mapping = image.getId() + ": " + file.getName(); 
+				log.append(mapping + "\n");
+				topicDetails.append(mapping + "\n");
 				pocessFiles(index + 1, log, topicDetails, topicErrors, tagIds);
 			}
 		};
@@ -573,7 +588,9 @@ public class TopicImportPresenter implements Presenter
 			@Override
 			public boolean error(Message message, Throwable throwable)
 			{
-				log.append("ERROR! Upload of " + file.getName() + " was a failure.\n");
+				final String error = "ERROR! Upload of " + file.getName() + " was a failure.";
+				log.append(error + "\n");
+				topicErrors.append(error + "\n");
 				pocessFiles(index + 1, log, topicDetails, topicErrors, tagIds);
 				return true;
 			}
@@ -620,7 +637,9 @@ public class TopicImportPresenter implements Presenter
 		}
 		catch (final Exception ex)
 		{
-			log.append("ERROR! Upload of " + file.getName() + " was a failure.\n");
+			final String myError = "ERROR! Upload of " + file.getName() + " was a failure.";			
+			log.append(myError + "\n");
+			topicErrors.append(myError + "\n");
 			pocessFiles(index + 1, log, topicDetails, topicErrors, tagIds);
 		}
 	}

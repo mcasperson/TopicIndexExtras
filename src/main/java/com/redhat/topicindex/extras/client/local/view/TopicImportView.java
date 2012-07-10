@@ -70,7 +70,7 @@ public class TopicImportView extends Composite implements TopicImportPresenter.D
 		final DecoratorPanel contentTableDecorator = new DecoratorPanel();
 		initWidget(contentTableDecorator);
 		
-		layoutTable = new Grid(6, 2);
+		layoutTable = new Grid(9, 2);
 		
 		final Label fileNamePrefixLabel = new Label("Enter a prefix for the file names.");
 		layoutTable.setWidget(0, 0, fileNamePrefixLabel);
@@ -98,10 +98,24 @@ public class TopicImportView extends Composite implements TopicImportPresenter.D
 		layoutTable.setWidget(4, 0, logLabel);
 		layoutTable.setWidget(4, 1, log);
 		
+		topicErrors.setReadOnly(true);
+		topicErrors.setWidth("60em");
+		topicErrors.setHeight("30em");
+		final Label topicErrorsLabel = new Label("Errors");
+		layoutTable.setWidget(5, 0, topicErrorsLabel);
+		layoutTable.setWidget(5, 1, topicErrors);
+		
+		topicDetails.setReadOnly(true);
+		topicDetails.setWidth("60em");
+		topicDetails.setHeight("30em");
+		final Label topicDetailsLabel = new Label("Topic Mapping Details");
+		layoutTable.setWidget(6, 0, topicDetailsLabel);
+		layoutTable.setWidget(6, 1, topicDetails);
+		
 		goButton = new Button("Go");
-		layoutTable.setWidget(5, 0, goButton);
+		layoutTable.setWidget(7, 0, goButton);
 		progress.setVisible(false);
-		layoutTable.setWidget(5, 1, progress);
+		layoutTable.setWidget(7, 1, progress);
 		
 		contentTableDecorator.add(layoutTable);
 	}
