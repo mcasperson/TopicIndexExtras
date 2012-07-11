@@ -286,14 +286,6 @@ public class TopicImportPresenter implements Presenter
 				{
 					// no processing required
 				}
-				/* tasks are turned into sections */
-				else if (toplevelNodeName.equals("task"))
-				{
-					final String error = file.getName() + ": This topic has had its document element changed from <task> to <section>.";
-					log.append(error + "\n");
-					toplevelNode = replaceNodeWithSection(toplevelNode);
-					errors.add(error);
-				}
 				/* appendicies are turned into sections */
 				else if (toplevelNodeName.equals("appendix"))
 				{
@@ -310,10 +302,10 @@ public class TopicImportPresenter implements Presenter
 					toplevelNode = replaceNodeWithSection(toplevelNode);
 					errors.add(error);
 				}
-				/* variablelist are turned into sections */
-				else if (toplevelNodeName.equals("variablelist"))
+				/* procedure are turned into sections */
+				else if (toplevelNodeName.equals("procedure"))
 				{
-					final String error = file.getName() + ": This topic has had its document element changed from <variablelist> to <section>.";
+					final String error = file.getName() + ": This topic has had its document element changed from <procedure> to <section>.";
 					log.append(error + "\n");
 					toplevelNode = replaceNodeWithSection(toplevelNode);
 					errors.add(error);
@@ -326,7 +318,15 @@ public class TopicImportPresenter implements Presenter
 					toplevelNode = replaceNodeWithSection(toplevelNode);
 					errors.add(error);
 				}
-				/* formalparas are turned into sections */
+				/* variablelist are turned into sections */
+				else if (toplevelNodeName.equals("variablelist"))
+				{
+					final String error = file.getName() + ": This topic has had its document element of <variablelist> wrapped in a <section>.";
+					log.append(error + "\n");
+					toplevelNode = wrapNodeInSection(toplevelNode);
+					errors.add(error);
+				}
+				/* para are turned into sections */
 				else if (toplevelNodeName.equals("para"))
 				{
 					final String error = file.getName() + ": This topic has had its document element of <para> wrapped in a <section>.";
@@ -346,6 +346,14 @@ public class TopicImportPresenter implements Presenter
 				else if (toplevelNodeName.equals("screen"))
 				{
 					final String error = file.getName() + ": This topic has had its document element of <screen> wrapped in a <section>.";
+					log.append("\n");
+					toplevelNode = wrapNodeInSection(toplevelNode);
+					errors.add(error);
+				}
+				/* tasks are wrapped in sections */
+				else if (toplevelNodeName.equals("task"))
+				{
+					final String error = file.getName() + ": This topic has had its document element of <task> wrapped in a <section>.";
 					log.append("\n");
 					toplevelNode = wrapNodeInSection(toplevelNode);
 					errors.add(error);
