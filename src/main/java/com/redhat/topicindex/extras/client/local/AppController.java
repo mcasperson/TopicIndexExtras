@@ -11,8 +11,10 @@ import com.google.gwt.event.shared.HandlerManager;
 import com.google.gwt.user.client.History;
 import com.google.gwt.user.client.ui.HasWidgets;
 import com.google.inject.Inject;
+import com.redhat.topicindex.extras.client.local.presenter.BulkImageUpdaterPresenter;
 import com.redhat.topicindex.extras.client.local.presenter.BulkImageUploadPresenter;
 import com.redhat.topicindex.extras.client.local.presenter.TopicImportPresenter;
+import com.redhat.topicindex.extras.client.local.view.BulkImageUpdaterView;
 import com.redhat.topicindex.extras.client.local.view.BulkImageUploadView;
 import com.redhat.topicindex.extras.client.local.view.TopicImportView;
 
@@ -39,7 +41,7 @@ public class AppController implements Presenter, ValueChangeHandler<String>
 
 		if ("".equals(History.getToken()))
 		{
-			History.newItem(TopicImportView.HISTORY_TOKEN);
+			History.newItem(BulkImageUpdaterView.HISTORY_TOKEN);
 		}
 		else
 		{
@@ -65,6 +67,14 @@ public class AppController implements Presenter, ValueChangeHandler<String>
 			else if (token.equals(BulkImageUploadView.HISTORY_TOKEN))
 			{
 				final IOCBeanDef<BulkImageUploadPresenter> bean = manager.lookupBean(BulkImageUploadPresenter.class);
+				if (bean != null)
+				{
+					presenter = bean.getInstance();
+				}
+			}
+			else if (token.equals(BulkImageUpdaterView.HISTORY_TOKEN))
+			{
+				final IOCBeanDef<BulkImageUpdaterPresenter> bean = manager.lookupBean(BulkImageUpdaterPresenter.class);
 				if (bean != null)
 				{
 					presenter = bean.getInstance();
