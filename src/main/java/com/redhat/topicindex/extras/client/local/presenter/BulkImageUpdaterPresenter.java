@@ -75,6 +75,9 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 	/** Topics expansion string */
 	private static final String PROPERTY_TAG_EXPAND = "{\"branches\":[{\"trunk\":{\"name\":\"topics\"},\"branches\":[{\"trunk\":{\"name\":\"properties\"}}]}]}";
+	
+	/** Images expansion string */
+	private static final String IMAGES_EXPAND = "{\"branches\":[{\"trunk\":{\"name\":\"images\"},\"branches\":[{\"trunk\":{\"name\":\"languageimages\"}}]}]}";
 
 	private static final String IMAGEDATA_FILEREF_RE = "<imagedata.*?fileref=\"(.*?)\"";
 	private static final RegExp IMAGEDATA_FILEREF_REGEXP = RegExp.compile(IMAGEDATA_FILEREF_RE);
@@ -249,7 +252,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 		{
 			System.out.println("Calling REST method");
 
-			restMethod.getJSONImages("");
+			restMethod.getJSONImages(IMAGES_EXPAND);
 		}
 		catch (final Exception ex)
 		{
