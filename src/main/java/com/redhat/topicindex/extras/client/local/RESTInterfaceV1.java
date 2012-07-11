@@ -1278,11 +1278,23 @@ public interface RESTInterfaceV1
 	@Consumes({ "*" })
 	public RESTTopicCollectionV1 getJSONTopicsWithQuery(@PathParam("query") final PathSegment query, @QueryParam("expand") final String expand) throws InvalidParameterException, InternalProcessingException;
 	
+	/**
+	 * A hack to work around the lack of PathSegments in Errai. See https://community.jboss.org/thread/202319
+	 */
 	@GET
 	@Path("/topics/get/json/query;propertyTag{propertyTagID}={propertyTagValue}")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes({ "*" })
 	public RESTTopicCollectionV1 getJSONTopicsWithQuery(@PathParam("propertyTagID") final Integer propertyTagID, @PathParam("propertyTagValue") final String propertyTagValue, @QueryParam("expand") final String expand) throws InvalidParameterException, InternalProcessingException;
+	
+	/**
+	 * A hack to work around the lack of PathSegments in Errai. See https://community.jboss.org/thread/202319
+	 */
+	@GET
+	@Path("/topics/get/json/query;tag{tagId}=1")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes({ "*" })
+	public RESTTopicCollectionV1 getJSONTopicsWithQuery(@PathParam("tagId") final Integer tagId, @QueryParam("expand") final String expand) throws InvalidParameterException, InternalProcessingException;
 	
 	@GET
 	@Path("/topics/get/xml/all")

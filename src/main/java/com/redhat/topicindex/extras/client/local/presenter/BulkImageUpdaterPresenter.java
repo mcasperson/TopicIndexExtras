@@ -21,14 +21,18 @@ import com.google.gwt.user.client.ui.Widget;
 import com.redhat.topicindex.extras.client.local.Presenter;
 import com.redhat.topicindex.extras.client.local.RESTInterfaceV1;
 import com.redhat.topicindex.rest.collections.RESTTopicCollectionV1;
+import com.redhat.topicindex.rest.entities.interfaces.RESTTopicV1;
 import com.smartgwt.client.widgets.Progressbar;
 
 @Dependent
 public class BulkImageUpdaterPresenter implements Presenter
 {
 	// private static final String REST_SERVER = "http://localhost:8080/TopicIndex/seam/resource/rest";
-	// private static final String REST_SERVER = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
-	private static final String REST_SERVER = "http://skynet.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
+	private static final String REST_SERVER = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
+	// private static final String REST_SERVER = "http://skynet.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
+	
+	/** Topics expansion string */
+	private static final String TOPICS_EXPAND = "{\"branches\":[{\"trunk\":{\"name\":\"topics\"}}]}";
 
 	private static final String SEARCH_URL_RE = "^http://(.*?)(:\\d+)?/TopicIndex/CustomSearchTopicList.seam([?].*?)(&cid=\\d+)?$";
 	private static final RegExp SEARCH_URL_RE_REGEXP = RegExp.compile(SEARCH_URL_RE);
@@ -90,7 +94,12 @@ public class BulkImageUpdaterPresenter implements Presenter
 				@Override
 				public void callback(final RESTTopicCollectionV1 topics)
 				{
-
+					for (final RESTTopicV1 topic : topics.getItems())
+					{
+						display.getTopicMatches().addItem(topic.getId() + ": " + topic.getTitle(), topic.getId().toString());
+					}
+					
+					done(log);
 				}
 			};
 
@@ -99,7 +108,9 @@ public class BulkImageUpdaterPresenter implements Presenter
 				@Override
 				public boolean error(final Message message, final Throwable throwable)
 				{
-
+					final String error = "ERROR! REST call to find topics failed with a HTTP error.";
+					log.append(error + "\n");
+					done(log);
 					return true;
 				}
 			};
@@ -108,26 +119,32 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 			try
 			{
-				final String hostname = results.getGroup(1);
+				/*final String hostname = results.getGroup(1);
 				final String port = results.getGroup(2);				
 				
 				final String restURL = "http://" + hostname + (port == null ? "" : port) + "/TopicIndex/seam/resource/rest";
 				
 				final String query = results.getGroup(3);
 				
-				final String restQuery = query.replace("?", "query;").replaceAll("&", ";");
+				final String restQuery = query.replace("?", "query;").replaceAll("&", ";");*/
 				
-				Window.alert(restURL);
-				Window.alert(restQuery);
+				final Integer tagId = Integer.parseInt(display.getTopicSearch().getText());				
 				
-				//restMethod.getJSONTopicsWithQuery(ORIGINAL_FILE_NAME_PROPERTY_TAG_ID, originalFileName, PROPERTY_TAG_EXPAND);
+				restMethod.getJSONTopicsWithQuery(tagId, TOPICS_EXPAND);
 			}
 			catch (final Exception ex)
 			{
-				final String error = "ERROR! REST call to find topics failed.";
-				log.append(error + "n");
+				final String error = "ERROR! REST call to find topics failed with an exception.";
+				log.append(error + "\n");
+				done(log);
 			}
 		}
+	}
+	
+	private void done(final StringBuilder log)
+	{
+		display.getLog().setText(log.toString());
+		enableUI(true);
 	}
 
 	private void enableUI(final boolean enabled)
@@ -145,7 +162,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 	@Override
 	public void go(final HasWidgets container)
 	{
-		/* Init the REST service */
+		/* Init the REST service */		
 		RestClient.setApplicationRoot(REST_SERVER);
 		RestClient.setJacksonMarshallingActive(true);
 

@@ -76,7 +76,7 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 		final Grid layoutGrid = new Grid(4, 4);
 		
 		topicSearch.setWidth("500px");
-		final Label topicSearchLabel = new Label("Enter the URL for the topics to search");
+		final Label topicSearchLabel = new Label("Enter the tag that identifies the topics");
 		layoutGrid.setWidget(0, 0, topicSearchLabel);
 		layoutGrid.setWidget(0, 1, topicSearch);
 		layoutGrid.setWidget(0, 2, go);
