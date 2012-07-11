@@ -85,15 +85,17 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 	private void getTopics(final StringBuilder log)
 	{
-		final MatchResult results = SEARCH_URL_RE_REGEXP.exec(display.getTopicSearch().getValue().trim());
+		/*final MatchResult results = SEARCH_URL_RE_REGEXP.exec(display.getTopicSearch().getValue().trim());
 		
 		if (results != null)
-		{
+		{*/
 			final RemoteCallback<RESTTopicCollectionV1> successCallback = new RemoteCallback<RESTTopicCollectionV1>()
 			{
 				@Override
 				public void callback(final RESTTopicCollectionV1 topics)
 				{
+					System.out.println(topics.getItems().size() + " topics returned.");
+					
 					for (final RESTTopicV1 topic : topics.getItems())
 					{
 						display.getTopicMatches().addItem(topic.getId() + ": " + topic.getTitle(), topic.getId().toString());
@@ -130,6 +132,8 @@ public class BulkImageUpdaterPresenter implements Presenter
 				
 				final Integer tagId = Integer.parseInt(display.getTopicSearch().getText());				
 				
+				System.out.println("Calling REST method");
+				
 				restMethod.getJSONTopicsWithQuery(tagId, TOPICS_EXPAND);
 			}
 			catch (final Exception ex)
@@ -138,7 +142,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 				log.append(error + "\n");
 				done(log);
 			}
-		}
+		//}
 	}
 	
 	private void done(final StringBuilder log)
