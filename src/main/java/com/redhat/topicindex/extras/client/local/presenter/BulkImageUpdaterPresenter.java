@@ -12,6 +12,9 @@ import org.jboss.errai.bus.client.api.ErrorCallback;
 import org.jboss.errai.bus.client.api.Message;
 import org.jboss.errai.bus.client.api.RemoteCallback;
 import org.jboss.errai.enterprise.client.jaxrs.api.RestClient;
+
+import com.google.gwt.event.dom.client.ChangeEvent;
+import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.regexp.shared.MatchResult;
@@ -35,23 +38,27 @@ class ImageReplacementDetails
 {
 	private Integer imageID;
 	private String fileRef;
+
 	public Integer getImageID()
 	{
 		return imageID;
 	}
+
 	public void setImageID(Integer imageID)
 	{
 		this.imageID = imageID;
 	}
+
 	public String getFileRef()
 	{
 		return fileRef;
 	}
+
 	public void setFileRef(String fileRef)
 	{
 		this.fileRef = fileRef;
 	}
-	
+
 	public ImageReplacementDetails(final Integer imageID, final String fileRef)
 	{
 		this.imageID = imageID;
@@ -98,7 +105,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 	@Inject
 	private Display display;
-	
+
 	private RESTTopicCollectionV1 topics;
 	private RESTImageCollectionV1 images;
 	private Map<RESTTopicV1, List<ImageReplacementDetails>> imageReplacements;
@@ -122,6 +129,36 @@ public class BulkImageUpdaterPresenter implements Presenter
 				{
 					enableUI(true);
 				}
+			}
+		});
+
+		display.getTopicMatches().addChangeHandler(new ChangeHandler()
+		{
+			@Override
+			public void onChange(final ChangeEvent event)
+			{
+				try
+				{
+					display.getImageMatches().clear();
+					
+					final Integer topicID = Integer.parseInt(display.getTopicMatches().getValue(display.getTopicMatches().getSelectedIndex()));
+					
+					for (final RESTTopicV1 topic : imageReplacements.keySet())
+					{
+						if (topicID.equals(topic.getId()))
+						{
+							for (final ImageReplacementDetails imgReplace : imageReplacements.get(topic))
+							{
+								display.getImageMatches().addItem(imgReplace.getImageID() + ": " + imgReplace.getFileRef(), imgReplace.getImageID().toString());
+							}
+						}
+					}
+				}
+				catch (final NumberFormatException ex)
+				{
+
+				}
+
 			}
 		});
 	}
@@ -225,7 +262,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 	private void processImagesAndTopics(final StringBuilder log)
 	{
 		imageReplacements = new HashMap<RESTTopicV1, List<ImageReplacementDetails>>();
-		
+
 		for (final RESTTopicV1 topic : topics.getItems())
 		{
 			final MatchResult result = IMAGEDATA_FILEREF_REGEXP.exec(topic.getXml());
@@ -260,7 +297,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 										{
 											if (!imageReplacements.containsKey(topic))
 												imageReplacements.put(topic, new ArrayList<ImageReplacementDetails>());
-																															
+
 											imageReplacements.get(topic).add(new ImageReplacementDetails(image.getId(), fileref));
 										}
 									}
@@ -271,17 +308,17 @@ public class BulkImageUpdaterPresenter implements Presenter
 				}
 			}
 		}
-		
+
 		displayResults(log);
 	}
-	
+
 	private void displayResults(final StringBuilder log)
 	{
 		for (final RESTTopicV1 topic : imageReplacements.keySet())
 		{
 			final List<ImageReplacementDetails> replacementImages = imageReplacements.get(topic);
-			
-			display.getTopicMatches().addItem(topic.getId() + ": " + topic.getTitle(), topic.getId().toString());
+
+			display.getTopicMatches().addItem(topic.getId() + ": " + topic.getTitle(), topic.getId().toString() + " - " + replacementImages.size());
 		}
 	}
 
@@ -290,7 +327,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 		display.getLog().setText(log.toString());
 		enableUI(true);
 	}
-	
+
 	private void clearUI()
 	{
 		display.getImageMatches().clear();
