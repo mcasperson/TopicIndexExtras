@@ -6445,6 +6445,40 @@ public class JaxrsProxyLoaderImpl implements JaxrsProxyLoader {
         return null;
       }
 
+      public RESTTopicCollectionV1 getJSONTopicsWithQuery(final Integer a0, final String a1) {
+        StringBuilder url = new StringBuilder(getBaseUrl());
+        url.append("1/topics/get/json/query;tag{tagId}=1".replace("{tagId}", URL.encodePathSegment(new Integer(a0).toString()))).append("?").append("expand").append("=").append(URL.encodeQueryString(new String(a1).toString()));
+        RequestBuilder requestBuilder = new RequestBuilder(RequestBuilder.GET, url.toString());
+        requestBuilder.setHeader("Accept", "application/json");
+        requestBuilder.setHeader("Content-Type", "*");
+        try {
+          requestBuilder.sendRequest(null, new RequestCallback() {
+            public void onError(Request request, Throwable throwable) {
+              RESTInterfaceV1Impl.this.handleError(throwable, null);
+            }
+            public void onResponseReceived(Request request, Response response) {
+              if (((RESTInterfaceV1Impl.this.successCodes == null) || RESTInterfaceV1Impl.this.successCodes.contains(response.getStatusCode())) && ((response.getStatusCode() >= 200) && (response.getStatusCode() < 300))) {
+                if (RESTInterfaceV1Impl.this.remoteCallback instanceof ResponseCallback) {
+                  RESTInterfaceV1Impl.this.remoteCallback.callback(response);
+                } else {
+                  if (response.getStatusCode() == 204) {
+                    RESTInterfaceV1Impl.this.remoteCallback.callback(null);
+                  } else {
+                    RESTInterfaceV1Impl.this.remoteCallback.callback(MarshallingWrapper.fromJSON(response.getText(), RESTTopicCollectionV1.class, null));
+                  }
+                }
+              } else {
+                ResponseException throwable = new ResponseException(response.getStatusText(), response);
+                RESTInterfaceV1Impl.this.handleError(throwable, response);
+              }
+            }
+          });
+        } catch (RequestException throwable) {
+          RESTInterfaceV1Impl.this.handleError(throwable, null);
+        }
+        return null;
+      }
+
       public RESTTopicCollectionV1 getXMLTopics(final String a0) {
         StringBuilder url = new StringBuilder(getBaseUrl());
         url.append("1/topics/get/xml/all").append("?").append("expand").append("=").append(URL.encodeQueryString(new String(a0).toString()));

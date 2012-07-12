@@ -17,8 +17,11 @@ import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
+import com.google.gwt.event.dom.client.DoubleClickEvent;
+import com.google.gwt.event.dom.client.DoubleClickHandler;
 import com.google.gwt.regexp.shared.MatchResult;
 import com.google.gwt.regexp.shared.RegExp;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.HasWidgets;
 import com.google.gwt.user.client.ui.ListBox;
@@ -69,9 +72,12 @@ class ImageReplacementDetails
 @Dependent
 public class BulkImageUpdaterPresenter implements Presenter
 {
-	// private static final String REST_SERVER = "http://localhost:8080/TopicIndex/seam/resource/rest";
-	private static final String REST_SERVER = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
-	// private static final String REST_SERVER = "http://skynet.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
+	private static final String BASE_URL = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/";
+	//private static final String BASE_URL = "http://localhost.usersys.redhat.com:8080/TopicIndex/";
+	//private static final String BASE_URL = "http://skynet.usersys.redhat.com:8080/TopicIndex/";
+	
+	private static final String REST_SERVER = BASE_URL + "seam/resource/rest";	
+	private static final String IMAGE_VIEW_URL = BASE_URL + "ImageFile.seam?imageFileImageFileId=";
 
 	/** Topics expansion string */
 	private static final String PROPERTY_TAG_EXPAND = "{\"branches\":[{\"trunk\":{\"name\":\"topics\"},\"branches\":[{\"trunk\":{\"name\":\"properties\"}}]}]}";
@@ -173,30 +179,79 @@ public class BulkImageUpdaterPresenter implements Presenter
 			@Override
 			public void onChange(final ChangeEvent event)
 			{
-				try
+				final RESTTopicV1 topic = getSelectedTopic();
+				final ImageReplacementDetails imgReplace = getSelectedImageReplacementDetails();
+				if (imgReplace != null && topic != null)
 				{
-					final Integer topicID = Integer.parseInt(display.getTopicMatches().getValue(display.getTopicMatches().getSelectedIndex()));
-					final Integer matchIndex = Integer.parseInt(display.getImageMatches().getValue(display.getImageMatches().getSelectedIndex()));
-					
-					for (final RESTTopicV1 topic : imageReplacements.keySet())
-					{
-						if (topicID.equals(topic.getId()))
-						{
-							final ImageReplacementDetails imgReplace = imageReplacements.get(topic).get(matchIndex);
+					final int startTextFindIndex = topic.getXml().indexOf(imgReplace.getFileRef());
 
-							final int startTextFindIndex = topic.getXml().indexOf(imgReplace.getFileRef());
-							
-							display.getXml().setText(topic.getXml());
-							display.getXml().setSelectionRange(startTextFindIndex, imgReplace.getFileRef().length());
-						}
-					}
-				}
-				catch (final NumberFormatException ex)
-				{
-
+					display.getXml().setText(topic.getXml());
+					display.getXml().setSelectionRange(startTextFindIndex, imgReplace.getFileRef().length());
+					display.getXml().setFocus(true);
 				}
 			}
 		});
+
+		display.getImageMatches().addDoubleClickHandler(new DoubleClickHandler()
+		{
+
+			@Override
+			public void onDoubleClick(DoubleClickEvent event)
+			{
+				final ImageReplacementDetails imgReplace = getSelectedImageReplacementDetails();
+				if (imgReplace != null)
+				{
+					Window.open(IMAGE_VIEW_URL + imgReplace.getImageID(), "ImageView", "");
+				}
+			}
+		});
+
+
+	}
+
+	private RESTTopicV1 getSelectedTopic()
+	{
+		try
+		{
+			final Integer topicID = Integer.parseInt(display.getTopicMatches().getValue(display.getTopicMatches().getSelectedIndex()));
+			final Integer matchIndex = Integer.parseInt(display.getImageMatches().getValue(display.getImageMatches().getSelectedIndex()));
+
+			for (final RESTTopicV1 topic : imageReplacements.keySet())
+			{
+				if (topicID.equals(topic.getId()))
+					return topic;
+			}
+		}
+		catch (final NumberFormatException ex)
+		{
+
+		}
+
+		return null;
+	}
+
+	private ImageReplacementDetails getSelectedImageReplacementDetails()
+	{
+		try
+		{
+			final Integer topicID = Integer.parseInt(display.getTopicMatches().getValue(display.getTopicMatches().getSelectedIndex()));
+			final Integer matchIndex = Integer.parseInt(display.getImageMatches().getValue(display.getImageMatches().getSelectedIndex()));
+
+			for (final RESTTopicV1 topic : imageReplacements.keySet())
+			{
+				if (topicID.equals(topic.getId()))
+				{
+					final ImageReplacementDetails imgReplace = imageReplacements.get(topic).get(matchIndex);
+					return imgReplace;
+				}
+			}
+		}
+		catch (final NumberFormatException ex)
+		{
+
+		}
+
+		return null;
 	}
 
 	private void getTopics(final StringBuilder log)
@@ -336,7 +391,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 										if (fileName.toLowerCase().equals(originalFileName.toLowerCase()))
 										{
 											final String message = "Found a replacement image for topic " + topic.getId() + " and image " + image.getId() + " for fileref " + fileref;
-											log.append(message + "/n");
+											log.append(message + "\n");
 											System.out.println(message);
 
 											if (!imageReplacements.containsKey(topic))
