@@ -124,13 +124,14 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 		layoutGrid.setWidget(3, 1, log);
 		
 		final HorizontalPanel buttonLayout = new HorizontalPanel();
-		layoutGrid.setWidget(4, 0, buttonLayout);
-		layoutGrid.setWidget(4, 1, progress);
-		
+		layoutGrid.setWidget(4, 1, buttonLayout);
+				
 		buttonLayout.add(go);
 		buttonLayout.add(bulkUpdate);
 		buttonLayout.add(updateTopic);
 		buttonLayout.add(updateImage);
+		
+		layoutGrid.setWidget(5, 1, progress);
 		
 		contentTableDecorator.add(layoutGrid);
 	}

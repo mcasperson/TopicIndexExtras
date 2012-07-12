@@ -127,6 +127,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 	private RESTTopicCollectionV1 topics;
 	private RESTImageCollectionV1 images;
 	private Map<RESTTopicV1, List<ImageReplacementDetails>> imageReplacements;
+	private StringBuilder log;
 
 	public void bind()
 	{
@@ -139,12 +140,11 @@ public class BulkImageUpdaterPresenter implements Presenter
 				final ImageReplacementDetails imgReplace = getSelectedImageReplacementDetails();
 				if (imgReplace != null && topic != null)
 				{
-					enableUI(false);
-					final StringBuilder log = new StringBuilder();
+					enableUI(false);					
 					final RESTTopicV1 newTopic = new RESTTopicV1();
 					newTopic.setId(topic.getId());
 					newTopic.explicitSetXml(topic.getXml().replace(imgReplace.getFileRef(), "images/" + imgReplace.getImageID()));
-					updateTopic(topic, newTopic, imgReplace, log);
+					updateTopic(topic, newTopic, imgReplace);
 				}
 			}
 		});
@@ -155,12 +155,11 @@ public class BulkImageUpdaterPresenter implements Presenter
 			public void onClick(final ClickEvent event)
 			{
 				/* Start processing the files. We create a chain of methods to simulate synchronous processing */
-				final StringBuilder log = new StringBuilder();
 				clearUI();
 				enableUI(false);
 				try
 				{
-					getTopics(log);
+					getTopics();
 				}
 				catch (final Exception ex)
 				{
@@ -216,6 +215,16 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 	}
 	
+	private void updateTopicList()
+	{
+		for (final RESTTopicV1 topic : imageReplacements.keySet())
+		{
+			final List<ImageReplacementDetails> replacementImages = imageReplacements.get(topic);
+
+			display.getTopicMatches().addItem(topic.getId() + ": " + topic.getTitle() + " - " + replacementImages.size(), topic.getId().toString());
+		}
+	}
+	
 	private void updateImageList()
 	{
 		try
@@ -244,7 +253,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 		}
 	}
 
-	private void updateTopic(final RESTTopicV1 oldTopic, final RESTTopicV1 newTopic, final ImageReplacementDetails imgReplace, final StringBuilder log)
+	private void updateTopic(final RESTTopicV1 oldTopic, final RESTTopicV1 newTopic, final ImageReplacementDetails imgReplace)
 	{
 		final RemoteCallback<RESTTopicV1> successCallback = new RemoteCallback<RESTTopicV1>()
 		{
@@ -253,13 +262,18 @@ public class BulkImageUpdaterPresenter implements Presenter
 			{
 				final String message = "Successfully updated Topic " + newTopic.getId();
 				log.append(message + "\n");
-				
-				oldTopic.setXml(newTopic.getXml());
-				oldTopic.setProperties(newTopic.getProperties());
+								
+				newTopic.cloneInto(oldTopic, false);
 				
 				imageReplacements.get(oldTopic).remove(imgReplace);
 				
-				done(log);
+				if (imageReplacements.get(oldTopic).size() == 0)
+					imageReplacements.remove(oldTopic);
+				
+				updateTopicList();
+				updateImageList();
+				
+				done();
 			}
 		};
 
@@ -270,7 +284,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 			{
 				final String error = "ERROR! REST call to update topic failed with a HTTP error.\nMessage: " + message + "\nException:  " + throwable.toString();
 				log.append(error + "\n");
-				done(log);
+				done();
 				return true;
 			}
 		};
@@ -287,7 +301,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 		{
 			final String error = "ERROR! REST call to update topic failed with an exception.";
 			log.append(error + "\n");
-			done(log);
+			done();
 		}
 	}
 
@@ -335,7 +349,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 		return null;
 	}
 
-	private void getTopics(final StringBuilder log)
+	private void getTopics()
 	{
 		final RemoteCallback<RESTTopicCollectionV1> successCallback = new RemoteCallback<RESTTopicCollectionV1>()
 		{
@@ -346,7 +360,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 				log.append(message + "\n");
 				System.out.println(message);
 				BulkImageUpdaterPresenter.this.topics = topics;
-				getImages(log);
+				getImages();
 			}
 		};
 
@@ -357,7 +371,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 			{
 				final String error = "ERROR! REST call to find topics failed with a HTTP error.\nMessage: " + message + "\nException:  " + throwable.toString();
 				log.append(error + "\n");
-				done(log);
+				done();
 				return true;
 			}
 		};
@@ -387,12 +401,12 @@ public class BulkImageUpdaterPresenter implements Presenter
 		{
 			final String error = "ERROR! REST call to find topics failed with an exception.";
 			log.append(error + "\n");
-			done(log);
+			done();
 		}
 
 	}
 
-	private void getImages(final StringBuilder log)
+	private void getImages()
 	{
 		final RemoteCallback<RESTImageCollectionV1> successCallback = new RemoteCallback<RESTImageCollectionV1>()
 		{
@@ -403,7 +417,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 				log.append(message + "\n");
 				System.out.println(message);
 				BulkImageUpdaterPresenter.this.images = images;
-				processImagesAndTopics(log);
+				processImagesAndTopics();
 			}
 		};
 
@@ -414,7 +428,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 			{
 				final String error = "ERROR! REST call to find images failed with a HTTP error.\nMessage: " + message + "\nException:  " + throwable.toString();
 				log.append(error + "\n");
-				done(log);
+				done();
 				return true;
 			}
 		};
@@ -431,11 +445,11 @@ public class BulkImageUpdaterPresenter implements Presenter
 		{
 			final String error = "ERROR! REST call to find images failed with an exception.";
 			log.append(error + "\n");
-			done(log);
+			done();
 		}
 	}
 
-	private void processImagesAndTopics(final StringBuilder log)
+	private void processImagesAndTopics()
 	{
 		imageReplacements = new HashMap<RESTTopicV1, List<ImageReplacementDetails>>();
 
@@ -489,22 +503,16 @@ public class BulkImageUpdaterPresenter implements Presenter
 			}
 		}
 
-		displayResults(log);
+		displayResults();
 	}
 
-	private void displayResults(final StringBuilder log)
+	private void displayResults()
 	{
-		for (final RESTTopicV1 topic : imageReplacements.keySet())
-		{
-			final List<ImageReplacementDetails> replacementImages = imageReplacements.get(topic);
-
-			display.getTopicMatches().addItem(topic.getId() + ": " + topic.getTitle() + " - " + replacementImages.size(), topic.getId().toString());
-		}
-
-		done(log);
+		updateImageList();
+		done();
 	}
 
-	private void done(final StringBuilder log)
+	private void done()
 	{
 		display.getLog().setText(log.toString());
 		enableUI(true);
@@ -516,6 +524,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 		display.getLog().setText("");
 		display.getTopicMatches().clear();
 		display.getXml().setText("");
+		log = new StringBuilder();
 	}
 
 	private void enableUI(final boolean enabled)
@@ -545,5 +554,6 @@ public class BulkImageUpdaterPresenter implements Presenter
 		container.clear();
 		container.add(display.asWidget());
 		enableUI(true);
+		clearUI();
 	}
 }
