@@ -18,13 +18,19 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 	
 	private final TextBox topicSearch = new TextBox();
 	private final Button go = new Button("Search");
-	private final Button bulkUpdate = new Button("Bulk Update");
+	private final Button bulkUpdate = new Button("Update all");
+	private final Button update = new Button("Update selected");
 	private final ListBox topicMatches = new ListBox(false);
-	private final ListBox imageMatches = new ListBox(false);
-	private final Button update = new Button("<");
+	private final ListBox imageMatches = new ListBox(false);	
 	private final Progressbar progress = new Progressbar();
 	private final TextArea log = new TextArea();
+	private final TextArea xml = new TextArea();
 	
+	public TextArea getXml()
+	{
+		return xml;
+	}
+
 	public TextArea getLog()
 	{
 		return log;
@@ -72,8 +78,9 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 		
 		progress.setVisible(false);
 		log.setReadOnly(true);
+		xml.setReadOnly(true);
 		
-		final Grid layoutGrid = new Grid(4, 4);
+		final Grid layoutGrid = new Grid(5, 3);
 		
 		topicSearch.setWidth("500px");
 		final Label topicSearchLabel = new Label("Enter the tag that identifies the topics");
@@ -91,18 +98,23 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 		final Label topicMatchLabel = new Label("The following topics have references to images");
 		layoutGrid.setWidget(1, 0, topicMatchLabel);
 		layoutGrid.setWidget(1, 1, topicMatches);
-		layoutGrid.setWidget(1, 2, update);
-		layoutGrid.setWidget(1, 3, imageMatches);
+		layoutGrid.setWidget(1, 2, imageMatches);
 		
 		final Label bulkUpdateLabel = new Label("Click this button to update all topics with only 1 match");
 		layoutGrid.setWidget(2, 0, bulkUpdateLabel);
 		layoutGrid.setWidget(2, 1, bulkUpdate);
 		
+		xml.setWidth("500px");
+		xml.setHeight("300px");
+		final Label xmlLabel = new Label("Topic XML");
+		layoutGrid.setWidget(3, 0, xmlLabel);
+		layoutGrid.setWidget(3, 1, xml);
+		
 		log.setWidth("500px");
 		log.setHeight("300px");
 		final Label logLabel = new Label("Log output");
-		layoutGrid.setWidget(3, 0, logLabel);
-		layoutGrid.setWidget(3, 1, log);
+		layoutGrid.setWidget(4, 0, logLabel);
+		layoutGrid.setWidget(4, 1, log);
 		
 		contentTableDecorator.add(layoutGrid);
 	}
