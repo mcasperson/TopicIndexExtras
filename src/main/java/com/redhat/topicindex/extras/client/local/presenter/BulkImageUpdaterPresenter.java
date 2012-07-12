@@ -153,6 +153,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 							for (final ImageReplacementDetails imgReplace : imageReplacements.get(topic))
 							{
 								display.getImageMatches().addItem(imgReplace.getImageID() + ": " + imgReplace.getFileRef(), imgReplace.getImageID().toString());
+								
 							}
 						}
 					}
@@ -173,7 +174,9 @@ public class BulkImageUpdaterPresenter implements Presenter
 			@Override
 			public void callback(final RESTTopicCollectionV1 topics)
 			{
-				System.out.println(topics.getItems().size() + " topics returned.");
+				final String message = topics.getItems().size() + " topics returned.";
+				log.append(message + "\n");
+				System.out.println(message);
 				BulkImageUpdaterPresenter.this.topics = topics;
 				getImages(log);
 			}
@@ -228,7 +231,9 @@ public class BulkImageUpdaterPresenter implements Presenter
 			@Override
 			public void callback(final RESTImageCollectionV1 images)
 			{
-				System.out.println(images.getItems().size() + " images returned.");
+				final String message = images.getItems().size() + " images returned.";
+				log.append(message + "\n");
+				System.out.println(message);
 				BulkImageUpdaterPresenter.this.images = images;
 				processImagesAndTopics(log);
 			}
@@ -298,6 +303,10 @@ public class BulkImageUpdaterPresenter implements Presenter
 										/* match file names ignoring case */
 										if (fileName.toLowerCase().equals(originalFileName.toLowerCase()))
 										{
+											final String message = "Found a replacement image for topic " + topic.getId() + " and image " + image.getId() + " for fileref " + fileref;
+											log.append(message + "/n");
+											System.out.println(message);
+											
 											if (!imageReplacements.containsKey(topic))
 												imageReplacements.put(topic, new ArrayList<ImageReplacementDetails>());
 
@@ -321,8 +330,10 @@ public class BulkImageUpdaterPresenter implements Presenter
 		{
 			final List<ImageReplacementDetails> replacementImages = imageReplacements.get(topic);
 
-			display.getTopicMatches().addItem(topic.getId() + ": " + topic.getTitle(), topic.getId().toString() + " - " + replacementImages.size());
+			display.getTopicMatches().addItem(topic.getId() + ": " + topic.getTitle() + " - " + replacementImages.size(), topic.getId().toString());
 		}
+		
+		done(log);
 	}
 
 	private void done(final StringBuilder log)
