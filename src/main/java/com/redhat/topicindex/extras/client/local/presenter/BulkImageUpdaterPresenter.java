@@ -219,7 +219,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 			@Override
 			public boolean error(final Message message, final Throwable throwable)
 			{
-				final String error = "ERROR! REST call to find topics failed with a HTTP error.";
+				final String error = "ERROR! REST call to find topics failed with a HTTP error.\nMessage: " + message + "\nException:  " + throwable.toString();
 				log.append(error + "\n");
 				done(log);
 				return true;
@@ -276,7 +276,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 			@Override
 			public boolean error(final Message message, final Throwable throwable)
 			{
-				final String error = "ERROR! REST call to find images failed with a HTTP error.";
+				final String error = "ERROR! REST call to find images failed with a HTTP error.\nMessage: " + message + "\nException:  " + throwable.toString();
 				log.append(error + "\n");
 				done(log);
 				return true;
