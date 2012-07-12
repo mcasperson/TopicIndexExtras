@@ -39,17 +39,13 @@ import com.smartgwt.client.widgets.Progressbar;
 
 class ImageReplacementDetails
 {
-	private Integer imageID;
-	private String fileRef;
+	private final Integer imageID;
+	private final String docbookFileName;
+	private final String fileRef;
 
 	public Integer getImageID()
 	{
 		return imageID;
-	}
-
-	public void setImageID(Integer imageID)
-	{
-		this.imageID = imageID;
 	}
 
 	public String getFileRef()
@@ -57,15 +53,16 @@ class ImageReplacementDetails
 		return fileRef;
 	}
 
-	public void setFileRef(String fileRef)
-	{
-		this.fileRef = fileRef;
-	}
-
-	public ImageReplacementDetails(final Integer imageID, final String fileRef)
+	public ImageReplacementDetails(final Integer imageID, final String fileRef, final String docbookFileName)
 	{
 		this.imageID = imageID;
 		this.fileRef = fileRef;
+		this.docbookFileName = docbookFileName;
+	}
+
+	public String getDocbookFileName()
+	{
+		return docbookFileName;
 	}
 }
 
@@ -81,7 +78,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 	/** Topics expansion string */
 	private static final String PROPERTY_TAG_EXPAND = "{\"branches\":[{\"trunk\":{\"name\":\"topics\"},\"branches\":[{\"trunk\":{\"name\":\"properties\"}}]}]}";
-	
+
 	/** Topic expansion */
 	private static final String TOPIC_PROPERTY_TAG_EXPAND = "{\"branches\":[{\"trunk\":{\"name\":\"properties\"}}]}";
 
@@ -140,10 +137,10 @@ public class BulkImageUpdaterPresenter implements Presenter
 				final ImageReplacementDetails imgReplace = getSelectedImageReplacementDetails();
 				if (imgReplace != null && topic != null)
 				{
-					enableUI(false);					
+					enableUI(false);
 					final RESTTopicV1 newTopic = new RESTTopicV1();
 					newTopic.setId(topic.getId());
-					newTopic.explicitSetXml(topic.getXml().replace(imgReplace.getFileRef(), "images/" + imgReplace.getImageID()));
+					newTopic.explicitSetXml(topic.getXml().replace(imgReplace.getFileRef(), "images/" + imgReplace.getDocbookFileName()));
 					updateTopic(topic, newTopic, imgReplace);
 				}
 			}
@@ -214,9 +211,12 @@ public class BulkImageUpdaterPresenter implements Presenter
 		});
 
 	}
-	
+
 	private void updateTopicList()
 	{
+		display.getTopicMatches().clear();
+		display.getXml().setText("");
+		
 		for (final RESTTopicV1 topic : imageReplacements.keySet())
 		{
 			final List<ImageReplacementDetails> replacementImages = imageReplacements.get(topic);
@@ -224,26 +224,24 @@ public class BulkImageUpdaterPresenter implements Presenter
 			display.getTopicMatches().addItem(topic.getId() + ": " + topic.getTitle() + " - " + replacementImages.size(), topic.getId().toString());
 		}
 	}
-	
+
 	private void updateImageList()
 	{
 		try
 		{
 			display.getImageMatches().clear();
+			display.getXml().setText("");
 
-			final Integer topicID = Integer.parseInt(display.getTopicMatches().getValue(display.getTopicMatches().getSelectedIndex()));
-
-			for (final RESTTopicV1 topic : imageReplacements.keySet())
+			final RESTTopicV1 topic = getSelectedTopic();
+			
+			if (topic != null)
 			{
-				if (topicID.equals(topic.getId()))
-				{
-					display.getXml().setText(topic.getXml());
+				display.getXml().setText(topic.getXml());
 
-					for (int i = 0; i < imageReplacements.get(topic).size(); ++i)
-					{
-						final ImageReplacementDetails imgReplace = imageReplacements.get(topic).get(i);
-						display.getImageMatches().addItem(imgReplace.getImageID() + ": " + imgReplace.getFileRef(), i + "");
-					}
+				for (int i = 0; i < imageReplacements.get(topic).size(); ++i)
+				{
+					final ImageReplacementDetails imgReplace = imageReplacements.get(topic).get(i);
+					display.getImageMatches().addItem(imgReplace.getImageID() + ": " + imgReplace.getFileRef(), i + "");
 				}
 			}
 		}
@@ -262,17 +260,21 @@ public class BulkImageUpdaterPresenter implements Presenter
 			{
 				final String message = "Successfully updated Topic " + newTopic.getId();
 				log.append(message + "\n");
-								
+
 				newTopic.cloneInto(oldTopic, false);
-				
+
+				/* The image has been replaced, so remove it from the list */
 				imageReplacements.get(oldTopic).remove(imgReplace);
 				
+				/* If that was the last image to be replaced, remove the image from the list */
 				if (imageReplacements.get(oldTopic).size() == 0)
+				{
 					imageReplacements.remove(oldTopic);
+					updateTopicList();
+				}
 				
-				updateTopicList();
 				updateImageList();
-				
+
 				done();
 			}
 		};
@@ -309,12 +311,15 @@ public class BulkImageUpdaterPresenter implements Presenter
 	{
 		try
 		{
-			final Integer topicID = Integer.parseInt(display.getTopicMatches().getValue(display.getTopicMatches().getSelectedIndex()));
-
-			for (final RESTTopicV1 topic : imageReplacements.keySet())
+			if (display.getTopicMatches().getSelectedIndex() != -1)
 			{
-				if (topicID.equals(topic.getId()))
-					return topic;
+				final Integer topicID = Integer.parseInt(display.getTopicMatches().getValue(display.getTopicMatches().getSelectedIndex()));
+
+				for (final RESTTopicV1 topic : imageReplacements.keySet())
+				{
+					if (topicID.equals(topic.getId()))
+						return topic;
+				}
 			}
 		}
 		catch (final NumberFormatException ex)
@@ -329,15 +334,18 @@ public class BulkImageUpdaterPresenter implements Presenter
 	{
 		try
 		{
-			final Integer topicID = Integer.parseInt(display.getTopicMatches().getValue(display.getTopicMatches().getSelectedIndex()));
-			final Integer matchIndex = Integer.parseInt(display.getImageMatches().getValue(display.getImageMatches().getSelectedIndex()));
-
-			for (final RESTTopicV1 topic : imageReplacements.keySet())
+			if (display.getTopicMatches().getSelectedIndex() != -1 && display.getImageMatches().getSelectedIndex() != -1)
 			{
-				if (topicID.equals(topic.getId()))
+				final Integer topicID = Integer.parseInt(display.getTopicMatches().getValue(display.getTopicMatches().getSelectedIndex()));
+				final Integer matchIndex = Integer.parseInt(display.getImageMatches().getValue(display.getImageMatches().getSelectedIndex()));
+
+				for (final RESTTopicV1 topic : imageReplacements.keySet())
 				{
-					final ImageReplacementDetails imgReplace = imageReplacements.get(topic).get(matchIndex);
-					return imgReplace;
+					if (topicID.equals(topic.getId()))
+					{
+						final ImageReplacementDetails imgReplace = imageReplacements.get(topic).get(matchIndex);
+						return imgReplace;
+					}
 				}
 			}
 		}
@@ -478,9 +486,11 @@ public class BulkImageUpdaterPresenter implements Presenter
 								if (langImage.getLocale().equals(topic.getLocale()))
 								{
 									final String[] langImagePathCompnents = langImage.getFilename().trim().split("[\\/]");
-									if (langImagePathCompnents.length != 0)
+									final String[] langImageExtensionCompnents = langImage.getFilename().trim().split("[.]");
+									if (langImagePathCompnents.length != 0 && langImageExtensionCompnents.length != 0)
 									{
 										final String originalFileName = langImagePathCompnents[langImagePathCompnents.length - 1];
+										final String originalFileNameExtension = langImageExtensionCompnents[langImageExtensionCompnents.length - 1];
 
 										/* match file names ignoring case */
 										if (fileName.toLowerCase().equals(originalFileName.toLowerCase()))
@@ -492,7 +502,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 											if (!imageReplacements.containsKey(topic))
 												imageReplacements.put(topic, new ArrayList<ImageReplacementDetails>());
 
-											imageReplacements.get(topic).add(new ImageReplacementDetails(image.getId(), fileref));
+											imageReplacements.get(topic).add(new ImageReplacementDetails(image.getId(), fileref, image.getId() + "." + originalFileNameExtension));
 										}
 									}
 								}
@@ -503,11 +513,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 			}
 		}
 
-		displayResults();
-	}
-
-	private void displayResults()
-	{
+		updateTopicList();
 		updateImageList();
 		done();
 	}
@@ -528,7 +534,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 	}
 
 	private void enableUI(final boolean enabled)
-	{		
+	{
 		display.getGo().setEnabled(enabled);
 		display.getImageMatches().setEnabled(enabled);
 		display.getLog().setEnabled(enabled);
@@ -538,7 +544,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 		display.getUpdate().setEnabled(enabled);
 		display.getXml().setEnabled(enabled);
 		display.getUpdateTopic().setEnabled(enabled);
-		
+
 		display.getBulkUpdate().setEnabled(false);
 		display.getUpdateTopic().setEnabled(false);
 	}

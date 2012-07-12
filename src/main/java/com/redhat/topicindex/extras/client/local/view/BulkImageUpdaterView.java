@@ -20,8 +20,8 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 	private final TextBox topicSearch = new TextBox();
 	private final Button go = new Button("Search");
 	private final Button bulkUpdate = new Button("Update All Topics With All Images");
-	private final Button updateTopic = new Button("Update Selected Topic With all Images");
-	private final Button updateImage = new Button("Update Selected Image With all Images");
+	private final Button updateTopic = new Button("Update Selected Topic With All Images");
+	private final Button updateImage = new Button("Update Selected Image With All Images");
 	private final Button update = new Button("Update selected");
 	private final ListBox topicMatches = new ListBox(false);
 	private final ListBox imageMatches = new ListBox(false);	
