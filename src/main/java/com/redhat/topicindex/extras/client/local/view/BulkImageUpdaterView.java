@@ -19,7 +19,9 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 	
 	private final TextBox topicSearch = new TextBox();
 	private final Button go = new Button("Search");
-	private final Button bulkUpdate = new Button("Update all");
+	private final Button bulkUpdate = new Button("Update All Topics With All Images");
+	private final Button updateTopic = new Button("Update Selected Topic With all Images");
+	private final Button updateImage = new Button("Update Selected Image With all Images");
 	private final Button update = new Button("Update selected");
 	private final ListBox topicMatches = new ListBox(false);
 	private final ListBox imageMatches = new ListBox(false);	
@@ -27,6 +29,11 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 	private final TextArea log = new TextArea();
 	private final TextArea xml = new TextArea();
 	
+	public Button getUpdateTopic()
+	{
+		return updateTopic;
+	}
+
 	public TextArea getXml()
 	{
 		return xml;
@@ -122,6 +129,8 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 		
 		buttonLayout.add(go);
 		buttonLayout.add(bulkUpdate);
+		buttonLayout.add(updateTopic);
+		buttonLayout.add(updateImage);
 		
 		contentTableDecorator.add(layoutGrid);
 	}
@@ -130,5 +139,10 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 	public Widget asWidget()
 	{
 		return this;
+	}
+
+	public Button getUpdateImage()
+	{
+		return updateImage;
 	}
 }

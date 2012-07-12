@@ -73,14 +73,17 @@ class ImageReplacementDetails
 public class BulkImageUpdaterPresenter implements Presenter
 {
 	private static final String BASE_URL = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/";
-	//private static final String BASE_URL = "http://localhost.usersys.redhat.com:8080/TopicIndex/";
-	//private static final String BASE_URL = "http://skynet.usersys.redhat.com:8080/TopicIndex/";
-	
-	private static final String REST_SERVER = BASE_URL + "seam/resource/rest";	
+	// private static final String BASE_URL = "http://localhost.usersys.redhat.com:8080/TopicIndex/";
+	// private static final String BASE_URL = "http://skynet.usersys.redhat.com:8080/TopicIndex/";
+
+	private static final String REST_SERVER = BASE_URL + "seam/resource/rest";
 	private static final String IMAGE_VIEW_URL = BASE_URL + "ImageFile.seam?imageFileImageFileId=";
 
 	/** Topics expansion string */
 	private static final String PROPERTY_TAG_EXPAND = "{\"branches\":[{\"trunk\":{\"name\":\"topics\"},\"branches\":[{\"trunk\":{\"name\":\"properties\"}}]}]}";
+	
+	/** Topic expansion */
+	private static final String TOPIC_PROPERTY_TAG_EXPAND = "{\"branches\":[{\"trunk\":{\"name\":\"properties\"}}]}";
 
 	/** Images expansion string */
 	private static final String IMAGES_EXPAND = "{\"branches\":[{\"trunk\":{\"name\":\"images\"},\"branches\":[{\"trunk\":{\"name\":\"languageimages\"}}]}]}";
@@ -112,6 +115,10 @@ public class BulkImageUpdaterPresenter implements Presenter
 		TextArea getLog();
 
 		Widget asWidget();
+
+		Button getUpdateTopic();
+
+		Button getUpdateImage();
 	}
 
 	@Inject
@@ -123,6 +130,25 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 	public void bind()
 	{
+		display.getUpdateImage().addClickHandler(new ClickHandler()
+		{
+			@Override
+			public void onClick(final ClickEvent event)
+			{
+				final RESTTopicV1 topic = getSelectedTopic();
+				final ImageReplacementDetails imgReplace = getSelectedImageReplacementDetails();
+				if (imgReplace != null && topic != null)
+				{
+					enableUI(false);
+					final StringBuilder log = new StringBuilder();
+					final RESTTopicV1 newTopic = new RESTTopicV1();
+					newTopic.setId(topic.getId());
+					newTopic.explicitSetXml(topic.getXml().replace(imgReplace.getFileRef(), "images/" + imgReplace.getImageID()));
+					updateTopic(topic, newTopic, imgReplace, log);
+				}
+			}
+		});
+
 		display.getGo().addClickHandler(new ClickHandler()
 		{
 			@Override
@@ -148,29 +174,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 			@Override
 			public void onChange(final ChangeEvent event)
 			{
-				try
-				{
-					display.getImageMatches().clear();
-
-					final Integer topicID = Integer.parseInt(display.getTopicMatches().getValue(display.getTopicMatches().getSelectedIndex()));
-
-					for (final RESTTopicV1 topic : imageReplacements.keySet())
-					{
-						if (topicID.equals(topic.getId()))
-						{
-							for (int i = 0; i < imageReplacements.get(topic).size(); ++i)
-							{
-								final ImageReplacementDetails imgReplace = imageReplacements.get(topic).get(i);
-								display.getImageMatches().addItem(imgReplace.getImageID() + ": " + imgReplace.getFileRef(), i + "");
-							}
-						}
-					}
-				}
-				catch (final NumberFormatException ex)
-				{
-
-				}
-
+				updateImageList();
 			}
 		});
 
@@ -189,6 +193,10 @@ public class BulkImageUpdaterPresenter implements Presenter
 					display.getXml().setSelectionRange(startTextFindIndex, imgReplace.getFileRef().length());
 					display.getXml().setFocus(true);
 				}
+				else
+				{
+					display.getXml().setText("");
+				}
 			}
 		});
 
@@ -201,12 +209,86 @@ public class BulkImageUpdaterPresenter implements Presenter
 				final ImageReplacementDetails imgReplace = getSelectedImageReplacementDetails();
 				if (imgReplace != null)
 				{
-					Window.open(IMAGE_VIEW_URL + imgReplace.getImageID(), "ImageView", "");
+					Window.open(IMAGE_VIEW_URL + imgReplace.getImageID(), "_blank", "");
 				}
 			}
 		});
 
+	}
+	
+	private void updateImageList()
+	{
+		try
+		{
+			display.getImageMatches().clear();
 
+			final Integer topicID = Integer.parseInt(display.getTopicMatches().getValue(display.getTopicMatches().getSelectedIndex()));
+
+			for (final RESTTopicV1 topic : imageReplacements.keySet())
+			{
+				if (topicID.equals(topic.getId()))
+				{
+					display.getXml().setText(topic.getXml());
+
+					for (int i = 0; i < imageReplacements.get(topic).size(); ++i)
+					{
+						final ImageReplacementDetails imgReplace = imageReplacements.get(topic).get(i);
+						display.getImageMatches().addItem(imgReplace.getImageID() + ": " + imgReplace.getFileRef(), i + "");
+					}
+				}
+			}
+		}
+		catch (final NumberFormatException ex)
+		{
+
+		}
+	}
+
+	private void updateTopic(final RESTTopicV1 oldTopic, final RESTTopicV1 newTopic, final ImageReplacementDetails imgReplace, final StringBuilder log)
+	{
+		final RemoteCallback<RESTTopicV1> successCallback = new RemoteCallback<RESTTopicV1>()
+		{
+			@Override
+			public void callback(final RESTTopicV1 topics)
+			{
+				final String message = "Successfully updated Topic " + newTopic.getId();
+				log.append(message + "\n");
+				
+				oldTopic.setXml(newTopic.getXml());
+				oldTopic.setProperties(newTopic.getProperties());
+				
+				imageReplacements.get(oldTopic).remove(imgReplace);
+				
+				done(log);
+			}
+		};
+
+		final ErrorCallback errorCallback = new ErrorCallback()
+		{
+			@Override
+			public boolean error(final Message message, final Throwable throwable)
+			{
+				final String error = "ERROR! REST call to update topic failed with a HTTP error.\nMessage: " + message + "\nException:  " + throwable.toString();
+				log.append(error + "\n");
+				done(log);
+				return true;
+			}
+		};
+
+		final RESTInterfaceV1 restMethod = RestClient.create(RESTInterfaceV1.class, successCallback, errorCallback);
+
+		try
+		{
+			System.out.println("Updating Topic via REST interface");
+
+			restMethod.updateJSONTopic(TOPIC_PROPERTY_TAG_EXPAND, newTopic);
+		}
+		catch (final Exception ex)
+		{
+			final String error = "ERROR! REST call to update topic failed with an exception.";
+			log.append(error + "\n");
+			done(log);
+		}
 	}
 
 	private RESTTopicV1 getSelectedTopic()
@@ -214,7 +296,6 @@ public class BulkImageUpdaterPresenter implements Presenter
 		try
 		{
 			final Integer topicID = Integer.parseInt(display.getTopicMatches().getValue(display.getTopicMatches().getSelectedIndex()));
-			final Integer matchIndex = Integer.parseInt(display.getImageMatches().getValue(display.getImageMatches().getSelectedIndex()));
 
 			for (final RESTTopicV1 topic : imageReplacements.keySet())
 			{
@@ -438,8 +519,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 	}
 
 	private void enableUI(final boolean enabled)
-	{
-		display.getBulkUpdate().setEnabled(enabled);
+	{		
 		display.getGo().setEnabled(enabled);
 		display.getImageMatches().setEnabled(enabled);
 		display.getLog().setEnabled(enabled);
@@ -448,6 +528,10 @@ public class BulkImageUpdaterPresenter implements Presenter
 		display.getTopicSearch().setEnabled(enabled);
 		display.getUpdate().setEnabled(enabled);
 		display.getXml().setEnabled(enabled);
+		display.getUpdateTopic().setEnabled(enabled);
+		
+		display.getBulkUpdate().setEnabled(false);
+		display.getUpdateTopic().setEnabled(false);
 	}
 
 	@Override
@@ -460,5 +544,6 @@ public class BulkImageUpdaterPresenter implements Presenter
 		bind();
 		container.clear();
 		container.add(display.asWidget());
+		enableUI(true);
 	}
 }
