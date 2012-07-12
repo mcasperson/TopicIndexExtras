@@ -4,6 +4,7 @@ import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.DecoratorPanel;
 import com.google.gwt.user.client.ui.Grid;
+import com.google.gwt.user.client.ui.HorizontalPanel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.ListBox;
 import com.google.gwt.user.client.ui.TextArea;
@@ -80,14 +81,13 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 		log.setReadOnly(true);
 		xml.setReadOnly(true);
 		
-		final Grid layoutGrid = new Grid(5, 3);
+		final Grid layoutGrid = new Grid(6, 3);
 		
 		topicSearch.setWidth("500px");
 		final Label topicSearchLabel = new Label("Enter the tag that identifies the topics");
 		layoutGrid.setWidget(0, 0, topicSearchLabel);
 		layoutGrid.setWidget(0, 1, topicSearch);
-		layoutGrid.setWidget(0, 2, go);
-		layoutGrid.setWidget(0, 3, progress);
+		layoutGrid.setWidget(0, 2, progress);
 		
 		topicMatches.setWidth("500px");
 		topicMatches.setHeight("300px");
@@ -100,21 +100,23 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 		layoutGrid.setWidget(1, 1, topicMatches);
 		layoutGrid.setWidget(1, 2, imageMatches);
 		
-		final Label bulkUpdateLabel = new Label("Click this button to update all topics with only 1 match");
-		layoutGrid.setWidget(2, 0, bulkUpdateLabel);
-		layoutGrid.setWidget(2, 1, bulkUpdate);
-		
 		xml.setWidth("500px");
 		xml.setHeight("300px");
 		final Label xmlLabel = new Label("Topic XML");
-		layoutGrid.setWidget(3, 0, xmlLabel);
-		layoutGrid.setWidget(3, 1, xml);
+		layoutGrid.setWidget(2, 0, xmlLabel);
+		layoutGrid.setWidget(2, 1, xml);
 		
 		log.setWidth("500px");
 		log.setHeight("300px");
 		final Label logLabel = new Label("Log output");
-		layoutGrid.setWidget(4, 0, logLabel);
-		layoutGrid.setWidget(4, 1, log);
+		layoutGrid.setWidget(3, 0, logLabel);
+		layoutGrid.setWidget(3, 1, log);
+		
+		final HorizontalPanel buttonLayout = new HorizontalPanel();
+		layoutGrid.setWidget(4, 0, buttonLayout);
+		
+		buttonLayout.add(go);
+		buttonLayout.add(bulkUpdate);
 		
 		contentTableDecorator.add(layoutGrid);
 	}
