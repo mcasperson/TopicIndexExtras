@@ -85,11 +85,14 @@ public class BulkImageUpdaterPresenter implements Presenter
 	/** Images expansion string */
 	private static final String IMAGES_EXPAND = "{\"branches\":[{\"trunk\":{\"name\":\"images\"},\"branches\":[{\"trunk\":{\"name\":\"languageimages\"}}]}]}";
 
-	private static final String IMAGEDATA_FILEREF_RE = "<imagedata.*?fileref=\"(.*?)\"";
+	private static final String IMAGEDATAS_FILEREF_RE = "<imagedata.+?fileref=\".+?\"";
+	private static final RegExp IMAGEDATAS_FILEREF_REGEXP = RegExp.compile(IMAGEDATAS_FILEREF_RE, "g");
+	
+	private static final String IMAGEDATA_FILEREF_RE = "<imagedata.+?fileref=\"(.+?)\"";
 	private static final RegExp IMAGEDATA_FILEREF_REGEXP = RegExp.compile(IMAGEDATA_FILEREF_RE);
 
-	private static final String SEARCH_URL_RE = "^http://(.*?)(:\\d+)?/TopicIndex/CustomSearchTopicList.seam([?].*?)(&cid=\\d+)?$";
-	private static final RegExp SEARCH_URL_RE_REGEXP = RegExp.compile(SEARCH_URL_RE);
+	//private static final String SEARCH_URL_RE = "^http://(.*?)(:\\d+)?/TopicIndex/CustomSearchTopicList.seam([?].*?)(&cid=\\d+)?$";
+	//private static final RegExp SEARCH_URL_RE_REGEXP = RegExp.compile(SEARCH_URL_RE);
 
 	public interface Display
 	{
@@ -121,8 +124,6 @@ public class BulkImageUpdaterPresenter implements Presenter
 	@Inject
 	private Display display;
 
-	private RESTTopicCollectionV1 topics;
-	private RESTImageCollectionV1 images;
 	private Map<RESTTopicV1, List<ImageReplacementDetails>> imageReplacements;
 	private StringBuilder log;
 
@@ -367,8 +368,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 				final String message = topics.getItems().size() + " topics returned.";
 				log.append(message + "\n");
 				System.out.println(message);
-				BulkImageUpdaterPresenter.this.topics = topics;
-				getImages();
+				getImages(topics);
 			}
 		};
 
@@ -414,7 +414,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 	}
 
-	private void getImages()
+	private void getImages(final RESTTopicCollectionV1 topics)
 	{
 		final RemoteCallback<RESTImageCollectionV1> successCallback = new RemoteCallback<RESTImageCollectionV1>()
 		{
@@ -424,8 +424,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 				final String message = images.getItems().size() + " images returned.";
 				log.append(message + "\n");
 				System.out.println(message);
-				BulkImageUpdaterPresenter.this.images = images;
-				processImagesAndTopics();
+				processImagesAndTopics(topics, images);
 			}
 		};
 
@@ -457,21 +456,30 @@ public class BulkImageUpdaterPresenter implements Presenter
 		}
 	}
 
-	private void processImagesAndTopics()
+	private void processImagesAndTopics(final RESTTopicCollectionV1 topics, final RESTImageCollectionV1 images)
 	{
 		imageReplacements = new HashMap<RESTTopicV1, List<ImageReplacementDetails>>();
 
 		for (final RESTTopicV1 topic : topics.getItems())
 		{
-			final MatchResult result = IMAGEDATA_FILEREF_REGEXP.exec(topic.getXml());
-
+			/* Get the results for all the images and their filerefs */
+			final MatchResult result = IMAGEDATAS_FILEREF_REGEXP.exec(topic.getXml());
+			
 			if (result != null)
 			{
 				/* Loop over the filerefs found in the XML */
 				for (int i = 0; i < result.getGroupCount(); ++i)
 				{
-					final String fileref = result.getGroup(i);
+					/* This will be the whole imagedata element */
+					final String imagedata = result.getGroup(i);
+					
+					/* Now do a regex match to find the fileref attribute */
+					final MatchResult individualResult = IMAGEDATA_FILEREF_REGEXP.exec(imagedata);
+					
+					final String fileref = individualResult.getGroup(1);
+					
 					final String[] fileRefPathCompnents = fileref.trim().split("[\\/]");
+				
 					if (fileRefPathCompnents.length != 0)
 					{
 						final String fileName = fileRefPathCompnents[fileRefPathCompnents.length - 1];
@@ -487,6 +495,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 								{
 									final String[] langImagePathCompnents = langImage.getFilename().trim().split("[\\/]");
 									final String[] langImageExtensionCompnents = langImage.getFilename().trim().split("[.]");
+									
 									if (langImagePathCompnents.length != 0 && langImageExtensionCompnents.length != 0)
 									{
 										final String originalFileName = langImagePathCompnents[langImagePathCompnents.length - 1];
@@ -555,6 +564,8 @@ public class BulkImageUpdaterPresenter implements Presenter
 		/* Init the REST service */
 		RestClient.setApplicationRoot(REST_SERVER);
 		RestClient.setJacksonMarshallingActive(true);
+		
+		
 
 		bind();
 		container.clear();
