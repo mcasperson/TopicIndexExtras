@@ -85,11 +85,8 @@ public class BulkImageUpdaterPresenter implements Presenter
 	/** Images expansion string */
 	private static final String IMAGES_EXPAND = "{\"branches\":[{\"trunk\":{\"name\":\"images\"},\"branches\":[{\"trunk\":{\"name\":\"languageimages\"}}]}]}";
 
-	private static final String IMAGEDATAS_FILEREF_RE = "<imagedata.+?fileref=\".+?\"";
+	private static final String IMAGEDATAS_FILEREF_RE = "<imagedata.+?fileref=\"(.+?)\"";
 	private static final RegExp IMAGEDATAS_FILEREF_REGEXP = RegExp.compile(IMAGEDATAS_FILEREF_RE, "g");
-	
-	private static final String IMAGEDATA_FILEREF_RE = "<imagedata.+?fileref=\"(.+?)\"";
-	private static final RegExp IMAGEDATA_FILEREF_REGEXP = RegExp.compile(IMAGEDATA_FILEREF_RE);
 
 	//private static final String SEARCH_URL_RE = "^http://(.*?)(:\\d+)?/TopicIndex/CustomSearchTopicList.seam([?].*?)(&cid=\\d+)?$";
 	//private static final RegExp SEARCH_URL_RE_REGEXP = RegExp.compile(SEARCH_URL_RE);
@@ -463,20 +460,15 @@ public class BulkImageUpdaterPresenter implements Presenter
 		for (final RESTTopicV1 topic : topics.getItems())
 		{
 			/* Get the results for all the images and their filerefs */
-			final MatchResult result = IMAGEDATAS_FILEREF_REGEXP.exec(topic.getXml());
-			
-			if (result != null)
+
+			for (MatchResult result = IMAGEDATAS_FILEREF_REGEXP.exec(topic.getXml()); result != null; result = IMAGEDATAS_FILEREF_REGEXP.exec(topic.getXml()))
 			{
+				final int groupCount = result.getGroupCount();
+				
 				/* Loop over the filerefs found in the XML */
-				for (int i = 0; i < result.getGroupCount(); ++i)
+				for (int i = 0; i < groupCount; ++i)
 				{
-					/* This will be the whole imagedata element */
-					final String imagedata = result.getGroup(i);
-					
-					/* Now do a regex match to find the fileref attribute */
-					final MatchResult individualResult = IMAGEDATA_FILEREF_REGEXP.exec(imagedata);
-					
-					final String fileref = individualResult.getGroup(1);
+					final String fileref = result.getGroup(1);
 					
 					final String[] fileRefPathCompnents = fileref.trim().split("[\\/]");
 				
