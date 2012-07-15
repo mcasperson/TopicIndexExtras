@@ -88,8 +88,8 @@ public class BulkImageUpdaterPresenter implements Presenter
 	private static final String IMAGEDATAS_FILEREF_RE = "<imagedata.+?fileref=\"(.+?)\"";
 	private static final RegExp IMAGEDATAS_FILEREF_REGEXP = RegExp.compile(IMAGEDATAS_FILEREF_RE, "g");
 
-	//private static final String SEARCH_URL_RE = "^http://(.*?)(:\\d+)?/TopicIndex/CustomSearchTopicList.seam([?].*?)(&cid=\\d+)?$";
-	//private static final RegExp SEARCH_URL_RE_REGEXP = RegExp.compile(SEARCH_URL_RE);
+	// private static final String SEARCH_URL_RE = "^http://(.*?)(:\\d+)?/TopicIndex/CustomSearchTopicList.seam([?].*?)(&cid=\\d+)?$";
+	// private static final RegExp SEARCH_URL_RE_REGEXP = RegExp.compile(SEARCH_URL_RE);
 
 	public interface Display
 	{
@@ -214,7 +214,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 	{
 		display.getTopicMatches().clear();
 		display.getXml().setText("");
-		
+
 		for (final RESTTopicV1 topic : imageReplacements.keySet())
 		{
 			final List<ImageReplacementDetails> replacementImages = imageReplacements.get(topic);
@@ -231,7 +231,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 			display.getXml().setText("");
 
 			final RESTTopicV1 topic = getSelectedTopic();
-			
+
 			if (topic != null)
 			{
 				display.getXml().setText(topic.getXml());
@@ -263,14 +263,14 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 				/* The image has been replaced, so remove it from the list */
 				imageReplacements.get(oldTopic).remove(imgReplace);
-				
+
 				/* If that was the last image to be replaced, remove the image from the list */
 				if (imageReplacements.get(oldTopic).size() == 0)
 				{
 					imageReplacements.remove(oldTopic);
 					updateTopicList();
 				}
-				
+
 				updateImageList();
 
 				done();
@@ -463,54 +463,49 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 			for (MatchResult result = IMAGEDATAS_FILEREF_REGEXP.exec(topic.getXml()); result != null; result = IMAGEDATAS_FILEREF_REGEXP.exec(topic.getXml()))
 			{
-				final int groupCount = result.getGroupCount();
-				
-				/* Loop over the filerefs found in the XML */
-				for (int i = 0; i < groupCount; ++i)
+				final String fileref = result.getGroup(1);
+
+				final String[] fileRefPathCompnents = fileref.trim().split("[\\/]");
+
+				if (fileRefPathCompnents.length != 0)
 				{
-					final String fileref = result.getGroup(1);
-					
-					final String[] fileRefPathCompnents = fileref.trim().split("[\\/]");
-				
-					if (fileRefPathCompnents.length != 0)
+					final String fileName = fileRefPathCompnents[fileRefPathCompnents.length - 1];
+
+					/* Loop over all the images */
+					for (final RESTImageV1 image : images.getItems())
 					{
-						final String fileName = fileRefPathCompnents[fileRefPathCompnents.length - 1];
-
-						/* Loop over all the images */
-						for (final RESTImageV1 image : images.getItems())
+						/* Loop over all the image locales */
+						for (final RESTLanguageImageV1 langImage : image.getLanguageImages_OTM().getItems())
 						{
-							/* Loop over all the image locales */
-							for (final RESTLanguageImageV1 langImage : image.getLanguageImages_OTM().getItems())
+							/* Find a matching locale */
+							if (langImage.getLocale().equals(topic.getLocale()))
 							{
-								/* Find a matching locale */
-								if (langImage.getLocale().equals(topic.getLocale()))
+								final String[] langImagePathCompnents = langImage.getFilename().trim().split("[\\/]");
+								final String[] langImageExtensionCompnents = langImage.getFilename().trim().split("[.]");
+
+								if (langImagePathCompnents.length != 0 && langImageExtensionCompnents.length != 0)
 								{
-									final String[] langImagePathCompnents = langImage.getFilename().trim().split("[\\/]");
-									final String[] langImageExtensionCompnents = langImage.getFilename().trim().split("[.]");
-									
-									if (langImagePathCompnents.length != 0 && langImageExtensionCompnents.length != 0)
+									final String originalFileName = langImagePathCompnents[langImagePathCompnents.length - 1];
+									final String originalFileNameExtension = langImageExtensionCompnents[langImageExtensionCompnents.length - 1];
+
+									/* match file names ignoring case */
+									if (fileName.toLowerCase().equals(originalFileName.toLowerCase()))
 									{
-										final String originalFileName = langImagePathCompnents[langImagePathCompnents.length - 1];
-										final String originalFileNameExtension = langImageExtensionCompnents[langImageExtensionCompnents.length - 1];
+										final String message = "Found a replacement image for topic " + topic.getId() + " and image " + image.getId() + " for fileref " + fileref;
+										log.append(message + "\n");
+										System.out.println(message);
 
-										/* match file names ignoring case */
-										if (fileName.toLowerCase().equals(originalFileName.toLowerCase()))
-										{
-											final String message = "Found a replacement image for topic " + topic.getId() + " and image " + image.getId() + " for fileref " + fileref;
-											log.append(message + "\n");
-											System.out.println(message);
+										if (!imageReplacements.containsKey(topic))
+											imageReplacements.put(topic, new ArrayList<ImageReplacementDetails>());
 
-											if (!imageReplacements.containsKey(topic))
-												imageReplacements.put(topic, new ArrayList<ImageReplacementDetails>());
-
-											imageReplacements.get(topic).add(new ImageReplacementDetails(image.getId(), fileref, image.getId() + "." + originalFileNameExtension));
-										}
+										imageReplacements.get(topic).add(new ImageReplacementDetails(image.getId(), fileref, image.getId() + "." + originalFileNameExtension));
 									}
 								}
 							}
 						}
 					}
 				}
+
 			}
 		}
 
@@ -556,8 +551,6 @@ public class BulkImageUpdaterPresenter implements Presenter
 		/* Init the REST service */
 		RestClient.setApplicationRoot(REST_SERVER);
 		RestClient.setJacksonMarshallingActive(true);
-		
-		
 
 		bind();
 		container.clear();
