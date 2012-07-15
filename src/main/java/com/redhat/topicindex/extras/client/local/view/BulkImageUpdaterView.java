@@ -21,7 +21,7 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 	private final Button go = new Button("Search");
 	private final Button bulkUpdate = new Button("Update All Topics With All Images");
 	private final Button updateTopic = new Button("Update Selected Topic With All Images");
-	private final Button updateImage = new Button("Update Selected Image With All Images");
+	private final Button updateImage = new Button("Update Selected Topic With Selected Image");
 	private final Button update = new Button("Update selected");
 	private final ListBox topicMatches = new ListBox(false);
 	private final ListBox imageMatches = new ListBox(false);	
@@ -90,9 +90,6 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 		
 		final Grid layoutGrid = new Grid(6, 2);
 		
-		
-		
-		
 		topicSearch.setWidth("500px");
 		final Label topicSearchLabel = new Label("Enter the tag that identifies the topics");
 		layoutGrid.setWidget(0, 0, topicSearchLabel);
@@ -102,7 +99,6 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 		
 		searchPanel.add(topicSearch);
 		searchPanel.add(go);
-		
 		
 		topicMatches.setWidth("500px");
 		topicMatches.setHeight("300px");

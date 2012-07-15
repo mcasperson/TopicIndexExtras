@@ -126,6 +126,52 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 	public void bind()
 	{
+		display.getBulkUpdate().addClickHandler(new ClickHandler()
+		{
+			@Override
+			public void onClick(ClickEvent event)
+			{
+				try
+				{
+					enableUI(false);
+					
+					final float size = imageReplacements.size();
+					int i = 0;
+					
+					for (final RESTTopicV1 topic : imageReplacements.keySet())
+					{
+						final int percentDone = (int)(i / size * 100);
+						display.getProgress().setPercentDone(percentDone);
+						
+						updateAllOneToOneImages(topic);
+						++i;
+					}
+				}
+				finally
+				{
+					enableUI(true);
+				}
+			}
+		});
+
+		display.getUpdateTopic().addClickHandler(new ClickHandler()
+		{
+			@Override
+			public void onClick(final ClickEvent event)
+			{
+				try
+				{
+					enableUI(false);
+					final RESTTopicV1 topic = getSelectedTopic();
+					updateAllOneToOneImages(topic);
+				}
+				finally
+				{
+					enableUI(true);
+				}
+			}
+		});
+
 		display.getUpdateImage().addClickHandler(new ClickHandler()
 		{
 			@Override
@@ -208,6 +254,35 @@ public class BulkImageUpdaterPresenter implements Presenter
 			}
 		});
 
+	}
+
+	private void updateAllOneToOneImages(final RESTTopicV1 topic)
+	{
+		if (imageReplacements.containsKey(topic))
+		{
+			final RESTTopicV1 newTopic = new RESTTopicV1();
+			newTopic.setId(topic.getId());
+			newTopic.explicitSetXml(topic.getXml());
+
+			final List<ImageReplacementDetails> images = imageReplacements.get(topic);
+
+			for (final ImageReplacementDetails imgReplace : images)
+			{
+				/* Do a second loop through to make sure that the image we are replacing doesn't have more than one option */
+				boolean oneToOne = true;
+				for (final ImageReplacementDetails imgReplace2 : images)
+				{
+					if (imgReplace != imgReplace2 && imgReplace.getFileRef().equals(imgReplace2.getFileRef()))
+					{
+						oneToOne = false;
+						break;
+					}
+				}
+
+				if (oneToOne)
+					newTopic.setXml(newTopic.getXml().replace(imgReplace.getFileRef(), "images/" + imgReplace.getDocbookFileName()));
+			}
+		}
 	}
 
 	private void updateTopicList()
@@ -540,9 +615,6 @@ public class BulkImageUpdaterPresenter implements Presenter
 		display.getUpdate().setEnabled(enabled);
 		display.getXml().setEnabled(enabled);
 		display.getUpdateTopic().setEnabled(enabled);
-
-		display.getBulkUpdate().setEnabled(false);
-		display.getUpdateTopic().setEnabled(false);
 	}
 
 	@Override
