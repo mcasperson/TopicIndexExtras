@@ -185,7 +185,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 					final RESTTopicV1 newTopic = new RESTTopicV1();
 					newTopic.setId(topic.getId());
 					newTopic.explicitSetXml(topic.getXml().replace(imgReplace.getFileRef(), "images/" + imgReplace.getDocbookFileName()));
-					updateTopic(topic, newTopic, imgReplace);
+					updateTopic(topic, newTopic, new ArrayList<ImageReplacementDetails>(){{add(imgReplace);}});
 				}
 			}
 		});
@@ -259,12 +259,13 @@ public class BulkImageUpdaterPresenter implements Presenter
 	private void updateAllOneToOneImages(final RESTTopicV1 topic)
 	{
 		if (imageReplacements.containsKey(topic))
-		{
+		{	
 			final RESTTopicV1 newTopic = new RESTTopicV1();
 			newTopic.setId(topic.getId());
 			newTopic.explicitSetXml(topic.getXml());
 
 			final List<ImageReplacementDetails> images = imageReplacements.get(topic);
+			final List<ImageReplacementDetails> processedImages = new ArrayList<ImageReplacementDetails>();
 
 			for (final ImageReplacementDetails imgReplace : images)
 			{
@@ -275,13 +276,30 @@ public class BulkImageUpdaterPresenter implements Presenter
 					if (imgReplace != imgReplace2 && imgReplace.getFileRef().equals(imgReplace2.getFileRef()))
 					{
 						oneToOne = false;
+						log.append("Topic " + topic.getId() + " has an ambiguous image reference " + imgReplace.getFileRef() + "  can can point to " + imgReplace.getImageID() + " or " + imgReplace2.getImageID() + "\n");
 						break;
 					}
 				}
 
 				if (oneToOne)
+				{
 					newTopic.setXml(newTopic.getXml().replace(imgReplace.getFileRef(), "images/" + imgReplace.getDocbookFileName()));
+					processedImages.add(imgReplace);
+				}
+			}		
+			
+			log.append("Topic " + topic.getId() + " had " + processedImages.size() + " image references updated.\n");
+			
+			/* Proceed only if we have actually found some images that can be replaced */
+			if (processedImages.size() != 0)
+			{
+				updateTopic(topic, newTopic, processedImages);
 			}
+			else
+			{
+				done();
+			}
+						
 		}
 	}
 
@@ -324,7 +342,14 @@ public class BulkImageUpdaterPresenter implements Presenter
 		}
 	}
 
-	private void updateTopic(final RESTTopicV1 oldTopic, final RESTTopicV1 newTopic, final ImageReplacementDetails imgReplace)
+	/**
+	 * Uploads the contents of newTopic, which has been updated with the details in imagReplace, and if successful copies in the
+	 * new version of the topic into oldTopic, and removes the processed images.
+	 * @param oldTopic The existing topic
+	 * @param newTopic The new topic to be saved
+	 * @param imgReplace The images that were used to update the xml found in newTopic
+	 */
+	private void updateTopic(final RESTTopicV1 oldTopic, final RESTTopicV1 newTopic, final List<ImageReplacementDetails> imgReplacments)
 	{
 		final RemoteCallback<RESTTopicV1> successCallback = new RemoteCallback<RESTTopicV1>()
 		{
@@ -337,7 +362,10 @@ public class BulkImageUpdaterPresenter implements Presenter
 				newTopic.cloneInto(oldTopic, false);
 
 				/* The image has been replaced, so remove it from the list */
-				imageReplacements.get(oldTopic).remove(imgReplace);
+				for (final ImageReplacementDetails imgReplace : imgReplacments)
+				{
+					imageReplacements.get(oldTopic).remove(imgReplace);
+				}
 
 				/* If that was the last image to be replaced, remove the image from the list */
 				if (imageReplacements.get(oldTopic).size() == 0)
