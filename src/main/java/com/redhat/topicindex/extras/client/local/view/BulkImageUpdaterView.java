@@ -85,7 +85,7 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 		final Grid layoutGrid = new Grid(5, 2);
 		
 		topicSearch.setWidth("500px");
-		final Label topicSearchLabel = new Label("Enter the tag that identifies the topics");
+		final Label topicSearchLabel = new Label("Enter the Tag ID That Identifies the Topics");
 		layoutGrid.setWidget(0, 0, topicSearchLabel);
 				
 		final HorizontalPanel searchPanel = new HorizontalPanel();
@@ -96,7 +96,7 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 		searchPanel.add(go);
 		searchPanel.add(progress);
 		
-		final Label actionsLabel = new Label("Select an action to perform");
+		final Label actionsLabel = new Label("Select an Action to Perform");
 		layoutGrid.setWidget(1, 0, actionsLabel);
 		
 		final HorizontalPanel buttonLayout = new HorizontalPanel();
@@ -113,7 +113,7 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 		imageMatches.setWidth("600px");
 		imageMatches.setHeight("300px");
 		imageMatches.setVisibleItemCount(10);
-		final Label topicMatchLabel = new Label("The following topics have references to images");
+		final Label topicMatchLabel = new Label("The Following Topics Have References to Images");
 		layoutGrid.setWidget(2, 0, topicMatchLabel);
 		
 		final HorizontalPanel listPanel = new HorizontalPanel();
@@ -130,7 +130,7 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 		
 		log.setWidth("1200px");
 		log.setHeight("300px");
-		final Label logLabel = new Label("Log output");
+		final Label logLabel = new Label("Log Output");
 		layoutGrid.setWidget(4, 0, logLabel);
 		layoutGrid.setWidget(4, 1, log);
 		
