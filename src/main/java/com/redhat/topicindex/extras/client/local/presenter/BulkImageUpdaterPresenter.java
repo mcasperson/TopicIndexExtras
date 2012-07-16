@@ -164,17 +164,6 @@ public class BulkImageUpdaterPresenter implements Presenter
 			public void onClick(ClickEvent event)
 			{
 				enableUI(false);
-				final RESTTopicV1 topic = getSelectedTopic();
-				updateAllOneToOneImages(new ArrayList<RESTTopicV1>(){{add(topic);}});
-			}
-		});
-
-		display.getUpdateTopic().addClickHandler(new ClickHandler()
-		{
-			@Override
-			public void onClick(final ClickEvent event)
-			{
-				enableUI(false);
 				final List<RESTTopicV1> topics = new ArrayList<RESTTopicV1>();
 				
 				for (final RESTTopicV1 topic : imageReplacements.keySet())
@@ -183,6 +172,18 @@ public class BulkImageUpdaterPresenter implements Presenter
 				}
 				
 				updateAllOneToOneImages(topics);
+
+			}
+		});
+
+		display.getUpdateTopic().addClickHandler(new ClickHandler()
+		{
+			@Override
+			public void onClick(final ClickEvent event)
+			{				
+				enableUI(false);
+				final RESTTopicV1 topic = getSelectedTopic();
+				updateAllOneToOneImages(new ArrayList<RESTTopicV1>(){{add(topic);}});
 			}
 		});
 
@@ -199,7 +200,11 @@ public class BulkImageUpdaterPresenter implements Presenter
 					enableUI(false);
 					final RESTTopicV1 newTopic = new RESTTopicV1();
 					newTopic.setId(topic.getId());
-					newTopic.explicitSetXml(topic.getXml().replace(imgReplace.getFileRef(), "images/" + imgReplace.getDocbookFileName()));
+					newTopic.explicitSetXml(topic.getXml());
+					
+					while (newTopic.getXml().contains(imgReplace.getFileRef()))
+						newTopic.setXml(newTopic.getXml().replace(imgReplace.getFileRef(), "images/" + imgReplace.getDocbookFileName()));
+					
 					log.append("Topic " + topic.getId() + " had 1 image reference updated.\n");
 					updateTopic(new ArrayList<TopicUpdateData>()
 					{
@@ -319,7 +324,10 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 				if (oneToOne)
 				{
-					newTopic.setXml(newTopic.getXml().replace(imgReplace.getFileRef(), "images/" + imgReplace.getDocbookFileName()));
+					/* A replace all without having to worry about the file ref having something that is confused with a regex */
+					while (newTopic.getXml().contains(imgReplace.getFileRef()))
+						newTopic.setXml(newTopic.getXml().replace(imgReplace.getFileRef(), "images/" + imgReplace.getDocbookFileName()));
+									
 					processedImages.add(imgReplace);
 				}
 			}
@@ -709,8 +717,22 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 										if (!imageReplacements.containsKey(topic))
 											imageReplacements.put(topic, new ArrayList<ImageReplacementDetails>());
+										
+										final List<ImageReplacementDetails> existingReplacements = imageReplacements.get(topic);
+										
+										/* Deal with the situation where the same image is referenced multiple times in the topic's xml */
+										boolean alreadyFound = false;
+										for (final ImageReplacementDetails imgReplacement : existingReplacements)
+										{
+											if (fileref.equals(imgReplacement.getFileRef()) && image.getId().equals(imgReplacement.getImageID()))
+											{
+												alreadyFound = true;
+												break;
+											}
+										}
 
-										imageReplacements.get(topic).add(new ImageReplacementDetails(image.getId(), fileref, image.getId() + "." + originalFileNameExtension));
+										if (!alreadyFound)
+											imageReplacements.get(topic).add(new ImageReplacementDetails(image.getId(), fileref, image.getId() + "." + originalFileNameExtension));
 									}
 								}
 							}
