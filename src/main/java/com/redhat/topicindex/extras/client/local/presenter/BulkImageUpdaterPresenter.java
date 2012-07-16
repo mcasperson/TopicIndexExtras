@@ -134,22 +134,22 @@ public class BulkImageUpdaterPresenter implements Presenter
 				try
 				{
 					enableUI(false);
-					
+
 					final float size = imageReplacements.size();
 					int i = 0;
-					
+
 					for (final RESTTopicV1 topic : imageReplacements.keySet())
 					{
-						final int percentDone = (int)(i / size * 100);
+						final int percentDone = (int) (i / size * 100);
 						display.getProgress().setPercentDone(percentDone);
-						
+
 						updateAllOneToOneImages(topic);
 						++i;
 					}
 				}
 				finally
 				{
-					enableUI(true);
+					done();
 				}
 			}
 		});
@@ -167,7 +167,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 				}
 				finally
 				{
-					enableUI(true);
+					done();
 				}
 			}
 		});
@@ -177,15 +177,28 @@ public class BulkImageUpdaterPresenter implements Presenter
 			@Override
 			public void onClick(final ClickEvent event)
 			{
-				final RESTTopicV1 topic = getSelectedTopic();
-				final ImageReplacementDetails imgReplace = getSelectedImageReplacementDetails();
-				if (imgReplace != null && topic != null)
+				try
 				{
 					enableUI(false);
-					final RESTTopicV1 newTopic = new RESTTopicV1();
-					newTopic.setId(topic.getId());
-					newTopic.explicitSetXml(topic.getXml().replace(imgReplace.getFileRef(), "images/" + imgReplace.getDocbookFileName()));
-					updateTopic(topic, newTopic, new ArrayList<ImageReplacementDetails>(){{add(imgReplace);}});
+					final RESTTopicV1 topic = getSelectedTopic();
+					final ImageReplacementDetails imgReplace = getSelectedImageReplacementDetails();
+					if (imgReplace != null && topic != null)
+					{
+						enableUI(false);
+						final RESTTopicV1 newTopic = new RESTTopicV1();
+						newTopic.setId(topic.getId());
+						newTopic.explicitSetXml(topic.getXml().replace(imgReplace.getFileRef(), "images/" + imgReplace.getDocbookFileName()));
+						updateTopic(topic, newTopic, new ArrayList<ImageReplacementDetails>()
+						{
+							{
+								add(imgReplace);
+							}
+						});
+					}
+				}
+				finally
+				{
+					done();
 				}
 			}
 		});
@@ -259,7 +272,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 	private void updateAllOneToOneImages(final RESTTopicV1 topic)
 	{
 		if (imageReplacements.containsKey(topic))
-		{	
+		{
 			final RESTTopicV1 newTopic = new RESTTopicV1();
 			newTopic.setId(topic.getId());
 			newTopic.explicitSetXml(topic.getXml());
@@ -286,20 +299,16 @@ public class BulkImageUpdaterPresenter implements Presenter
 					newTopic.setXml(newTopic.getXml().replace(imgReplace.getFileRef(), "images/" + imgReplace.getDocbookFileName()));
 					processedImages.add(imgReplace);
 				}
-			}		
-			
+			}
+
 			log.append("Topic " + topic.getId() + " had " + processedImages.size() + " image references updated.\n");
-			
+
 			/* Proceed only if we have actually found some images that can be replaced */
 			if (processedImages.size() != 0)
 			{
 				updateTopic(topic, newTopic, processedImages);
 			}
-			else
-			{
-				done();
-			}
-						
+
 		}
 	}
 
@@ -343,11 +352,15 @@ public class BulkImageUpdaterPresenter implements Presenter
 	}
 
 	/**
-	 * Uploads the contents of newTopic, which has been updated with the details in imagReplace, and if successful copies in the
-	 * new version of the topic into oldTopic, and removes the processed images.
-	 * @param oldTopic The existing topic
-	 * @param newTopic The new topic to be saved
-	 * @param imgReplace The images that were used to update the xml found in newTopic
+	 * Uploads the contents of newTopic, which has been updated with the details in imagReplace, and if successful copies in the new version of the topic into
+	 * oldTopic, and removes the processed images.
+	 * 
+	 * @param oldTopic
+	 *            The existing topic
+	 * @param newTopic
+	 *            The new topic to be saved
+	 * @param imgReplace
+	 *            The images that were used to update the xml found in newTopic
 	 */
 	private void updateTopic(final RESTTopicV1 oldTopic, final RESTTopicV1 newTopic, final List<ImageReplacementDetails> imgReplacments)
 	{
@@ -375,8 +388,6 @@ public class BulkImageUpdaterPresenter implements Presenter
 				}
 
 				updateImageList();
-
-				done();
 			}
 		};
 
@@ -387,7 +398,6 @@ public class BulkImageUpdaterPresenter implements Presenter
 			{
 				final String error = "ERROR! REST call to update topic failed with a HTTP error.\nMessage: " + message + "\nException:  " + throwable.toString();
 				log.append(error + "\n");
-				done();
 				return true;
 			}
 		};
@@ -404,7 +414,6 @@ public class BulkImageUpdaterPresenter implements Presenter
 		{
 			final String error = "ERROR! REST call to update topic failed with an exception.";
 			log.append(error + "\n");
-			done();
 		}
 	}
 
