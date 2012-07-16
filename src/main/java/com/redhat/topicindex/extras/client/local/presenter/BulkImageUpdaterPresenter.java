@@ -37,6 +37,35 @@ import com.redhat.topicindex.rest.entities.interfaces.RESTLanguageImageV1;
 import com.redhat.topicindex.rest.entities.interfaces.RESTTopicV1;
 import com.smartgwt.client.widgets.Progressbar;
 
+class TopicUpdateData
+{
+	private final RESTTopicV1 oldTopic;
+	private final RESTTopicV1 newTopic;
+	private final List<ImageReplacementDetails> processedImages;
+
+	public TopicUpdateData(final RESTTopicV1 oldTopic, final RESTTopicV1 newTopic, final List<ImageReplacementDetails> processedImages)
+	{
+		this.oldTopic = oldTopic;
+		this.newTopic = newTopic;
+		this.processedImages = processedImages;
+	}
+
+	public RESTTopicV1 getOldTopic()
+	{
+		return oldTopic;
+	}
+
+	public RESTTopicV1 getNewTopic()
+	{
+		return newTopic;
+	}
+
+	public List<ImageReplacementDetails> getProcessedImages()
+	{
+		return processedImages;
+	}
+}
+
 class ImageReplacementDetails
 {
 	private final Integer imageID;
@@ -114,7 +143,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 		Button getUpdateTopic();
 
 		Button getUpdateImage();
-		
+
 		Button getBulkUpdate();
 	}
 
@@ -134,26 +163,9 @@ public class BulkImageUpdaterPresenter implements Presenter
 			@Override
 			public void onClick(ClickEvent event)
 			{
-				try
-				{
-					enableUI(false);
-
-					final float size = imageReplacements.size();
-					int i = 0;
-
-					for (final RESTTopicV1 topic : imageReplacements.keySet())
-					{
-						final int percentDone = (int) (i / size * 100);
-						display.getProgress().setPercentDone(percentDone);
-
-						updateAllOneToOneImages(topic);
-						++i;
-					}
-				}
-				finally
-				{
-					done();
-				}
+				enableUI(false);
+				final RESTTopicV1 topic = getSelectedTopic();
+				updateAllOneToOneImages(new ArrayList<RESTTopicV1>(){{add(topic);}});
 			}
 		});
 
@@ -162,16 +174,15 @@ public class BulkImageUpdaterPresenter implements Presenter
 			@Override
 			public void onClick(final ClickEvent event)
 			{
-				try
-				{
-					enableUI(false);
-					final RESTTopicV1 topic = getSelectedTopic();
-					updateAllOneToOneImages(topic);
+				enableUI(false);
+				final List<RESTTopicV1> topics = new ArrayList<RESTTopicV1>();
+				
+				for (final RESTTopicV1 topic : imageReplacements.keySet())
+				{				
+					topics.add(topic);					
 				}
-				finally
-				{
-					done();
-				}
+				
+				updateAllOneToOneImages(topics);
 			}
 		});
 
@@ -180,29 +191,29 @@ public class BulkImageUpdaterPresenter implements Presenter
 			@Override
 			public void onClick(final ClickEvent event)
 			{
-				try
+				enableUI(false);
+				final RESTTopicV1 topic = getSelectedTopic();
+				final ImageReplacementDetails imgReplace = getSelectedImageReplacementDetails();
+				if (imgReplace != null && topic != null)
 				{
 					enableUI(false);
-					final RESTTopicV1 topic = getSelectedTopic();
-					final ImageReplacementDetails imgReplace = getSelectedImageReplacementDetails();
-					if (imgReplace != null && topic != null)
+					final RESTTopicV1 newTopic = new RESTTopicV1();
+					newTopic.setId(topic.getId());
+					newTopic.explicitSetXml(topic.getXml().replace(imgReplace.getFileRef(), "images/" + imgReplace.getDocbookFileName()));
+					log.append("Topic " + topic.getId() + " had 1 image reference updated.\n");
+					updateTopic(new ArrayList<TopicUpdateData>()
 					{
-						enableUI(false);
-						final RESTTopicV1 newTopic = new RESTTopicV1();
-						newTopic.setId(topic.getId());
-						newTopic.explicitSetXml(topic.getXml().replace(imgReplace.getFileRef(), "images/" + imgReplace.getDocbookFileName()));
-						updateTopic(topic, newTopic, new ArrayList<ImageReplacementDetails>()
 						{
+							add(new TopicUpdateData(topic, newTopic, new ArrayList<ImageReplacementDetails>()
 							{
-								add(imgReplace);
-							}
-						});
-					}
+								{
+									add(imgReplace);
+								}
+							}));
+						}
+					}, 1);
 				}
-				finally
-				{
-					done();
-				}
+
 			}
 		});
 
@@ -275,11 +286,15 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 	/**
 	 * Update any unambiguous image references for the given topic
-	 * @param topic The topic to be updated
+	 * 
+	 * @param topic
+	 *            The topic to be updated
 	 */
-	private void updateAllOneToOneImages(final RESTTopicV1 topic)
+	private void updateAllOneToOneImages(final List<RESTTopicV1> topics)
 	{
-		if (imageReplacements.containsKey(topic))
+		final List<TopicUpdateData> updateTopics = new ArrayList<TopicUpdateData>();
+
+		for (final RESTTopicV1 topic : topics)
 		{
 			final RESTTopicV1 newTopic = new RESTTopicV1();
 			newTopic.setId(topic.getId());
@@ -309,15 +324,16 @@ public class BulkImageUpdaterPresenter implements Presenter
 				}
 			}
 
-			log.append("Topic " + topic.getId() + " had " + processedImages.size() + " image references updated.\n");
+			log.append("Topic " + topic.getId() + " had " + processedImages.size() + " image reference(s) updated.\n");
 
 			/* Proceed only if we have actually found some images that can be replaced */
 			if (processedImages.size() != 0)
 			{
-				updateTopic(topic, newTopic, processedImages);
+				updateTopics.add(new TopicUpdateData(topic, newTopic, processedImages));
 			}
-
 		}
+		
+		updateTopic(updateTopics, updateTopics.size());
 	}
 
 	/**
@@ -369,70 +385,88 @@ public class BulkImageUpdaterPresenter implements Presenter
 	 * Uploads the contents of newTopic, which has been updated with the details in imagReplace, and if successful copies in the new version of the topic into
 	 * oldTopic, and removes the processed images.
 	 * 
-	 * @param oldTopic
-	 *            The existing topic
-	 * @param newTopic
-	 *            The new topic to be saved
-	 * @param imgReplace
-	 *            The images that were used to update the xml found in newTopic
+	 * @param topicUpdateDetails The collection of topics to be processed
+	 * @param maxSize The total number of topics to be processed. Used to display the progress
 	 */
-	private void updateTopic(final RESTTopicV1 oldTopic, final RESTTopicV1 newTopic, final List<ImageReplacementDetails> imgReplacments)
+	private void updateTopic(final List<TopicUpdateData> topicUpdateDetails, final int maxSize)
 	{
-		final RemoteCallback<RESTTopicV1> successCallback = new RemoteCallback<RESTTopicV1>()
+		if (topicUpdateDetails.size() == 0)
 		{
-			@Override
-			public void callback(final RESTTopicV1 topics)
-			{
-				final String message = "Successfully updated Topic " + newTopic.getId();
-				log.append(message + "\n");
-
-				newTopic.cloneInto(oldTopic, false);
-
-				/* The image has been replaced, so remove it from the list */
-				for (final ImageReplacementDetails imgReplace : imgReplacments)
-				{
-					imageReplacements.get(oldTopic).remove(imgReplace);
-				}
-
-				/* If that was the last image to be replaced, remove the image from the list */
-				if (imageReplacements.get(oldTopic).size() == 0)
-				{
-					imageReplacements.remove(oldTopic);
-					updateTopicList();
-				}
-
-				updateImageList();
-			}
-		};
-
-		final ErrorCallback errorCallback = new ErrorCallback()
-		{
-			@Override
-			public boolean error(final Message message, final Throwable throwable)
-			{
-				final String error = "ERROR! REST call to update topic failed with a HTTP error.\nMessage: " + message + "\nException:  " + throwable.toString();
-				log.append(error + "\n");
-				return true;
-			}
-		};
-
-		final RESTInterfaceV1 restMethod = RestClient.create(RESTInterfaceV1.class, successCallback, errorCallback);
-
-		try
-		{
-			System.out.println("Updating Topic via REST interface");
-
-			restMethod.updateJSONTopic(TOPIC_PROPERTY_TAG_EXPAND, newTopic);
+			done();
 		}
-		catch (final Exception ex)
+		else
 		{
-			final String error = "ERROR! REST call to update topic failed with an exception.";
-			log.append(error + "\n");
+			final int percentDone = (int)((float)topicUpdateDetails.size() / maxSize * 100);
+			display.getProgress().setPercentDone(percentDone);
+			
+			final TopicUpdateData data = topicUpdateDetails.remove(0);
+
+			final RemoteCallback<RESTTopicV1> successCallback = new RemoteCallback<RESTTopicV1>()
+			{
+				@Override
+				public void callback(final RESTTopicV1 topics)
+				{
+					final String message = "Successfully updated Topic " + data.getNewTopic().getId();
+					log.append(message + "\n");
+
+					data.getNewTopic().cloneInto(data.getOldTopic(), false);
+
+					/* The image has been replaced, so remove it from the list */
+					for (final ImageReplacementDetails imgReplace : data.getProcessedImages())
+					{
+						imageReplacements.get(data.getOldTopic()).remove(imgReplace);
+					}
+
+					/* If that was the last image to be replaced, remove the image from the list */
+					if (imageReplacements.get(data.getOldTopic()).size() == 0)
+					{
+						imageReplacements.remove(data.getOldTopic());
+						updateTopicList();
+					}
+
+					updateImageList();
+
+					topicUpdateDetails.remove(0);
+					updateTopic(topicUpdateDetails, maxSize);
+				}
+			};
+
+			final ErrorCallback errorCallback = new ErrorCallback()
+			{
+				@Override
+				public boolean error(final Message message, final Throwable throwable)
+				{
+					final String error = "ERROR! REST call to update topic failed with a HTTP error.\nMessage: " + message + "\nException:  " + throwable.toString();
+					log.append(error + "\n");
+
+					topicUpdateDetails.remove(0);
+					updateTopic(topicUpdateDetails, maxSize);
+
+					return true;
+				}
+			};
+
+			final RESTInterfaceV1 restMethod = RestClient.create(RESTInterfaceV1.class, successCallback, errorCallback);
+
+			try
+			{
+				System.out.println("Updating Topic via REST interface");
+
+				restMethod.updateJSONTopic(TOPIC_PROPERTY_TAG_EXPAND, data.getNewTopic());
+			}
+			catch (final Exception ex)
+			{
+				final String error = "ERROR! REST call to update topic failed with an exception.";
+				log.append(error + "\n");
+
+				updateTopic(topicUpdateDetails, maxSize);
+			}
 		}
 	}
 
-	/** 
+	/**
 	 * Get the topic that is represented by the selected item in the list box
+	 * 
 	 * @return the selected topic, or null if no selection could be matched
 	 */
 	private RESTTopicV1 getSelectedTopic()
@@ -458,8 +492,35 @@ public class BulkImageUpdaterPresenter implements Presenter
 		return null;
 	}
 
-	/** 
+	/**
+	 * @param index
+	 *            The index in the listbox that represents the topic
+	 * @return The topic that is represented by the supplied index
+	 */
+	private RESTTopicV1 getTopicFromIndex(final int index)
+	{
+		try
+		{
+			final Integer topicID = Integer.parseInt(display.getTopicMatches().getValue(index));
+
+			for (final RESTTopicV1 topic : imageReplacements.keySet())
+			{
+				if (topicID.equals(topic.getId()))
+					return topic;
+			}
+
+		}
+		catch (final Exception ex)
+		{
+
+		}
+
+		return null;
+	}
+
+	/**
 	 * Get the image replacement image data object that is represented by the selected item in the list box
+	 * 
 	 * @return the selected replacement image data object, or null if no selection could be matched
 	 */
 	private ImageReplacementDetails getSelectedImageReplacementDetails()
@@ -550,7 +611,9 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 	/**
 	 * Get a list of images from the server
-	 * @param topics The previously fetched collection of topics
+	 * 
+	 * @param topics
+	 *            The previously fetched collection of topics
 	 */
 	private void getImages(final RESTTopicCollectionV1 topics)
 	{
@@ -596,8 +659,11 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 	/**
 	 * Match the images to the image references in the topics' xml
-	 * @param topics The collection of topics
-	 * @param images The collection of images
+	 * 
+	 * @param topics
+	 *            The collection of topics
+	 * @param images
+	 *            The collection of images
 	 */
 	private void processImagesAndTopics(final RESTTopicCollectionV1 topics, final RESTImageCollectionV1 images)
 	{
@@ -685,9 +751,9 @@ public class BulkImageUpdaterPresenter implements Presenter
 		display.getLog().setEnabled(enabled);
 		display.getProgress().setVisible(!enabled);
 		display.getTopicMatches().setEnabled(enabled);
-		display.getTopicSearch().setEnabled(enabled);		
+		display.getTopicSearch().setEnabled(enabled);
 		display.getXml().setEnabled(enabled);
-		
+
 		display.getUpdateImage().setEnabled(enabled && display.getImageMatches().getSelectedIndex() != -1 && display.getTopicMatches().getSelectedIndex() != -1);
 		display.getUpdateTopic().setEnabled(enabled && display.getTopicMatches().getSelectedIndex() != -1);
 		display.getBulkUpdate().setEnabled(enabled);

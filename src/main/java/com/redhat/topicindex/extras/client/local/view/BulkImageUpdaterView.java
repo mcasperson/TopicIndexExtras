@@ -89,6 +89,7 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 		layoutGrid.setWidget(0, 0, topicSearchLabel);
 		
 		final HorizontalPanel searchPanel = new HorizontalPanel();
+		searchPanel.setSpacing(10);
 		layoutGrid.setWidget(0, 1, searchPanel);
 		
 		searchPanel.add(topicSearch);
