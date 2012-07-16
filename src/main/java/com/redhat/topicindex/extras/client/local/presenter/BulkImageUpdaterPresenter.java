@@ -438,7 +438,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 		else
 		{
 			/* deal with a possible div by 0 */
-			final int percentDone = maxSize == 0 ? 0 : (int) ((float) topicUpdateDetails.size() / maxSize * 100);
+			final int percentDone = maxSize == 0 ? 0 : (int) ((float) (maxSize - topicUpdateDetails.size()) / maxSize * 100);
 			display.getProgress().setPercentDone(percentDone);
 
 			final TopicUpdateData data = topicUpdateDetails.remove(0);
