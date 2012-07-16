@@ -107,10 +107,10 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 		buttonLayout.add(updateTopic);
 		buttonLayout.add(updateImage);
 		
-		topicMatches.setWidth("500px");
+		topicMatches.setWidth("600px");
 		topicMatches.setHeight("300px");
 		topicMatches.setVisibleItemCount(10);
-		imageMatches.setWidth("500px");
+		imageMatches.setWidth("600px");
 		imageMatches.setHeight("300px");
 		imageMatches.setVisibleItemCount(10);
 		final Label topicMatchLabel = new Label("The following topics have references to images");
@@ -122,13 +122,13 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 		listPanel.add(topicMatches);
 		listPanel.add(imageMatches);
 		
-		xml.setWidth("1000px");
+		xml.setWidth("1200px");
 		xml.setHeight("300px");
-		final Label xmlLabel = new Label("Topic XML");
+		final Label xmlLabel = new Label("Selected Topic's XML");
 		layoutGrid.setWidget(3, 0, xmlLabel);
 		layoutGrid.setWidget(3, 1, xml);
 		
-		log.setWidth("1000px");
+		log.setWidth("1200px");
 		log.setHeight("300px");
 		final Label logLabel = new Label("Log output");
 		layoutGrid.setWidget(4, 0, logLabel);

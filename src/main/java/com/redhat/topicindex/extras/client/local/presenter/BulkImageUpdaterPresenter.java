@@ -71,6 +71,7 @@ class ImageReplacementDetails
 	private final Integer imageID;
 	private final String docbookFileName;
 	private final String fileRef;
+	private final String originalFileName;
 
 	public Integer getImageID()
 	{
@@ -82,16 +83,22 @@ class ImageReplacementDetails
 		return fileRef;
 	}
 
-	public ImageReplacementDetails(final Integer imageID, final String fileRef, final String docbookFileName)
+	public ImageReplacementDetails(final Integer imageID, final String fileRef, final String docbookFileName, final String originalFileName)
 	{
 		this.imageID = imageID;
 		this.fileRef = fileRef;
 		this.docbookFileName = docbookFileName;
+		this.originalFileName = originalFileName;
 	}
 
 	public String getDocbookFileName()
 	{
 		return docbookFileName;
+	}
+
+	public String getOriginalFileName()
+	{
+		return originalFileName;
 	}
 }
 
@@ -150,8 +157,8 @@ public class BulkImageUpdaterPresenter implements Presenter
 	@Inject
 	private Display display;
 
-	private Map<RESTTopicV1, List<ImageReplacementDetails>> imageReplacements;
-	private StringBuilder log;
+	private Map<RESTTopicV1, List<ImageReplacementDetails>> imageReplacements = null;
+	private StringBuilder log = null;
 
 	/**
 	 * Add event listeners to the UI elements
@@ -232,6 +239,10 @@ public class BulkImageUpdaterPresenter implements Presenter
 			@Override
 			public void onClick(final ClickEvent event)
 			{
+				/* Prompt the user before clearing the UI completely */
+				if (log != null && log.length() != 0 && !Window.confirm("This will erase the current log output. Are you sure you wish to continue?"))
+					return;
+				
 				/* Start processing the files. We create a chain of methods to simulate synchronous processing */
 				clearUI();
 				enableUI(false);
@@ -313,18 +324,26 @@ public class BulkImageUpdaterPresenter implements Presenter
 			final List<ImageReplacementDetails> images = imageReplacements.get(topic);
 			final List<ImageReplacementDetails> processedImages = new ArrayList<ImageReplacementDetails>();
 
+			int i = 0;
 			for (final ImageReplacementDetails imgReplace : images)
 			{
 				/* Do a second loop through to make sure that the image we are replacing doesn't have more than one option */
 				boolean oneToOne = true;
+				int j = 0;
 				for (final ImageReplacementDetails imgReplace2 : images)
 				{
 					if (imgReplace != imgReplace2 && imgReplace.getFileRef().equals(imgReplace2.getFileRef()))
 					{
 						oneToOne = false;
-						log.append("Topic " + topic.getId() + " has an ambiguous image reference " + imgReplace.getFileRef() + "  can can point to " + imgReplace.getImageID() + " or " + imgReplace2.getImageID() + "\n");
+						
+						/* a hack to make sure the same message is not displayed twice, but in reverse */
+						if (i < j)
+							log.append("Topic " + topic.getId() + " has an ambiguous image reference " + imgReplace.getFileRef() + "  can can point to " + imgReplace.getImageID() + " or " + imgReplace2.getImageID() + "\n");
+						
 						break;
 					}
+					
+					++j;
 				}
 
 				if (oneToOne)
@@ -335,6 +354,8 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 					processedImages.add(imgReplace);
 				}
+				
+				++i;
 			}
 
 			log.append("Topic " + topic.getId() + " had " + processedImages.size() + " image reference(s) updated.\n");
@@ -384,7 +405,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 				for (int i = 0; i < imageReplacements.get(topic).size(); ++i)
 				{
 					final ImageReplacementDetails imgReplace = imageReplacements.get(topic).get(i);
-					display.getImageMatches().addItem(imgReplace.getImageID() + ": " + imgReplace.getFileRef(), i + "");
+					display.getImageMatches().addItem(imgReplace.getImageID() + " " + imgReplace.getOriginalFileName() + " : " + imgReplace.getFileRef(), i + "");
 				}
 			}
 		}
@@ -422,12 +443,13 @@ public class BulkImageUpdaterPresenter implements Presenter
 			final RemoteCallback<RESTTopicV1> successCallback = new RemoteCallback<RESTTopicV1>()
 			{
 				@Override
-				public void callback(final RESTTopicV1 topics)
+				public void callback(final RESTTopicV1 topic)
 				{
 					final String message = "Successfully updated Topic " + data.getNewTopic().getId();
 					log.append(message + "\n");
 
-					data.getNewTopic().cloneInto(data.getOldTopic(), false);
+					/* clone the state of the returned topic into the old topic */
+					topic.cloneInto(data.getOldTopic(), false);
 
 					final List<ImageReplacementDetails> topicImageReplacements = imageReplacements.get(data.getOldTopic());
 
@@ -597,6 +619,9 @@ public class BulkImageUpdaterPresenter implements Presenter
 			 * final String restQuery = query.replace("?", "query;").replaceAll("&", ";"); }
 			 */
 
+			display.getProgress().setPercentDone(0);
+			
+			
 			final Integer tagId = Integer.parseInt(display.getTopicSearch().getText());
 
 			System.out.println("Getting Topics from REST interface");
@@ -727,7 +752,9 @@ public class BulkImageUpdaterPresenter implements Presenter
 										}
 
 										if (!alreadyFound)
-											imageReplacements.get(topic).add(new ImageReplacementDetails(image.getId(), fileref, image.getId() + "." + originalFileNameExtension));
+										{																				
+											imageReplacements.get(topic).add(new ImageReplacementDetails(image.getId(), fileref, image.getId() + "." + originalFileNameExtension, langImage.getFilename()));
+										}
 									}
 								}
 							}
@@ -749,6 +776,8 @@ public class BulkImageUpdaterPresenter implements Presenter
 		display.getLog().setText(logString);
 		/* Scroll to the bottom */
 		display.getLog().setSelectionRange(logString.length(), 0);
+		/* Reset progress bar */
+		display.getProgress().setPercentDone(0);
 		enableUI(true);
 	}
 
@@ -773,7 +802,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 		display.getUpdateImage().setEnabled(enabled && display.getImageMatches().getSelectedIndex() != -1 && display.getTopicMatches().getSelectedIndex() != -1);
 		display.getUpdateTopic().setEnabled(enabled && display.getTopicMatches().getSelectedIndex() != -1);
-		display.getBulkUpdate().setEnabled(enabled && this.imageReplacements.size() != 0);
+		display.getBulkUpdate().setEnabled(enabled && this.imageReplacements != null && this.imageReplacements.size() != 0);
 	}
 
 	@Override
