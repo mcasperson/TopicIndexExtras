@@ -108,6 +108,9 @@ public class BulkImageUpdaterPresenter implements Presenter
 	private static final String BASE_URL = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/";
 	// private static final String BASE_URL = "http://localhost.usersys.redhat.com:8080/TopicIndex/";
 	// private static final String BASE_URL = "http://skynet.usersys.redhat.com:8080/TopicIndex/";
+	
+	private static final String FILE_PATH_SPLIT_RE = "[\\\\/]";
+	private static final String FILE_EXTENSION_SPLIT_RE = "[.]";
 
 	private static final String REST_SERVER = BASE_URL + "seam/resource/rest";
 	private static final String IMAGE_VIEW_URL = BASE_URL + "ImageFile.seam?imageFileImageFileId=";
@@ -705,7 +708,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 			{
 				final String fileref = result.getGroup(1);
 
-				final String[] fileRefPathCompnents = fileref.trim().split("[\\/]");
+				final String[] fileRefPathCompnents = fileref.trim().split(FILE_PATH_SPLIT_RE);
 
 				if (fileRefPathCompnents.length != 0)
 				{
@@ -720,8 +723,8 @@ public class BulkImageUpdaterPresenter implements Presenter
 							/* Find a matching locale */
 							if (langImage.getLocale().equals(topic.getLocale()))
 							{
-								final String[] langImagePathCompnents = langImage.getFilename().trim().split("[\\/]");
-								final String[] langImageExtensionCompnents = langImage.getFilename().trim().split("[.]");
+								final String[] langImagePathCompnents = langImage.getFilename().trim().split(FILE_PATH_SPLIT_RE);
+								final String[] langImageExtensionCompnents = langImage.getFilename().trim().split(FILE_EXTENSION_SPLIT_RE);
 
 								if (langImagePathCompnents.length != 0 && langImageExtensionCompnents.length != 0)
 								{
