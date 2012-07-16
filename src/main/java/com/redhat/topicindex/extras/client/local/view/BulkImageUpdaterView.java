@@ -87,7 +87,7 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 		topicSearch.setWidth("500px");
 		final Label topicSearchLabel = new Label("Enter the tag that identifies the topics");
 		layoutGrid.setWidget(0, 0, topicSearchLabel);
-		
+				
 		final HorizontalPanel searchPanel = new HorizontalPanel();
 		searchPanel.setSpacing(10);
 		layoutGrid.setWidget(0, 1, searchPanel);
@@ -96,6 +96,17 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 		searchPanel.add(go);
 		searchPanel.add(progress);
 		
+		final Label actionsLabel = new Label("Select an action to perform");
+		layoutGrid.setWidget(1, 0, actionsLabel);
+		
+		final HorizontalPanel buttonLayout = new HorizontalPanel();
+		buttonLayout.setSpacing(10);
+		layoutGrid.setWidget(1, 1, buttonLayout);
+				
+		buttonLayout.add(bulkUpdate);
+		buttonLayout.add(updateTopic);
+		buttonLayout.add(updateImage);
+		
 		topicMatches.setWidth("500px");
 		topicMatches.setHeight("300px");
 		topicMatches.setVisibleItemCount(10);
@@ -103,10 +114,10 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 		imageMatches.setHeight("300px");
 		imageMatches.setVisibleItemCount(10);
 		final Label topicMatchLabel = new Label("The following topics have references to images");
-		layoutGrid.setWidget(1, 0, topicMatchLabel);
+		layoutGrid.setWidget(2, 0, topicMatchLabel);
 		
 		final HorizontalPanel listPanel = new HorizontalPanel();
-		layoutGrid.setWidget(1, 1, listPanel);
+		layoutGrid.setWidget(2, 1, listPanel);
 		
 		listPanel.add(topicMatches);
 		listPanel.add(imageMatches);
@@ -114,22 +125,14 @@ public class BulkImageUpdaterView extends Composite implements BulkImageUpdaterP
 		xml.setWidth("1000px");
 		xml.setHeight("300px");
 		final Label xmlLabel = new Label("Topic XML");
-		layoutGrid.setWidget(2, 0, xmlLabel);
-		layoutGrid.setWidget(2, 1, xml);
+		layoutGrid.setWidget(3, 0, xmlLabel);
+		layoutGrid.setWidget(3, 1, xml);
 		
 		log.setWidth("1000px");
 		log.setHeight("300px");
 		final Label logLabel = new Label("Log output");
-		layoutGrid.setWidget(3, 0, logLabel);
-		layoutGrid.setWidget(3, 1, log);
-		
-		final HorizontalPanel buttonLayout = new HorizontalPanel();
-		buttonLayout.setSpacing(10);
-		layoutGrid.setWidget(4, 1, buttonLayout);
-				
-		buttonLayout.add(bulkUpdate);
-		buttonLayout.add(updateTopic);
-		buttonLayout.add(updateImage);
+		layoutGrid.setWidget(4, 0, logLabel);
+		layoutGrid.setWidget(4, 1, log);
 		
 		contentTableDecorator.add(layoutGrid);
 	}

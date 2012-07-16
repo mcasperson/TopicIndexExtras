@@ -165,12 +165,12 @@ public class BulkImageUpdaterPresenter implements Presenter
 			{
 				enableUI(false);
 				final List<RESTTopicV1> topics = new ArrayList<RESTTopicV1>();
-				
+
 				for (final RESTTopicV1 topic : imageReplacements.keySet())
-				{				
-					topics.add(topic);					
+				{
+					topics.add(topic);
 				}
-				
+
 				updateAllOneToOneImages(topics);
 
 			}
@@ -180,10 +180,15 @@ public class BulkImageUpdaterPresenter implements Presenter
 		{
 			@Override
 			public void onClick(final ClickEvent event)
-			{				
+			{
 				enableUI(false);
 				final RESTTopicV1 topic = getSelectedTopic();
-				updateAllOneToOneImages(new ArrayList<RESTTopicV1>(){{add(topic);}});
+				updateAllOneToOneImages(new ArrayList<RESTTopicV1>()
+				{
+					{
+						add(topic);
+					}
+				});
 			}
 		});
 
@@ -201,10 +206,10 @@ public class BulkImageUpdaterPresenter implements Presenter
 					final RESTTopicV1 newTopic = new RESTTopicV1();
 					newTopic.setId(topic.getId());
 					newTopic.explicitSetXml(topic.getXml());
-					
+
 					while (newTopic.getXml().contains(imgReplace.getFileRef()))
 						newTopic.setXml(newTopic.getXml().replace(imgReplace.getFileRef(), "images/" + imgReplace.getDocbookFileName()));
-					
+
 					log.append("Topic " + topic.getId() + " had 1 image reference updated.\n");
 					updateTopic(new ArrayList<TopicUpdateData>()
 					{
@@ -327,7 +332,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 					/* A replace all without having to worry about the file ref having something that is confused with a regex */
 					while (newTopic.getXml().contains(imgReplace.getFileRef()))
 						newTopic.setXml(newTopic.getXml().replace(imgReplace.getFileRef(), "images/" + imgReplace.getDocbookFileName()));
-									
+
 					processedImages.add(imgReplace);
 				}
 			}
@@ -340,7 +345,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 				updateTopics.add(new TopicUpdateData(topic, newTopic, processedImages));
 			}
 		}
-		
+
 		updateTopic(updateTopics, updateTopics.size());
 	}
 
@@ -393,8 +398,10 @@ public class BulkImageUpdaterPresenter implements Presenter
 	 * Uploads the contents of newTopic, which has been updated with the details in imagReplace, and if successful copies in the new version of the topic into
 	 * oldTopic, and removes the processed images.
 	 * 
-	 * @param topicUpdateDetails The collection of topics to be processed
-	 * @param maxSize The total number of topics to be processed. Used to display the progress
+	 * @param topicUpdateDetails
+	 *            The collection of topics to be processed
+	 * @param maxSize
+	 *            The total number of topics to be processed. Used to display the progress
 	 */
 	private void updateTopic(final List<TopicUpdateData> topicUpdateDetails, final int maxSize)
 	{
@@ -407,9 +414,9 @@ public class BulkImageUpdaterPresenter implements Presenter
 		else
 		{
 			/* deal with a possible div by 0 */
-			final int percentDone = maxSize == 0 ? 0 : (int)((float)topicUpdateDetails.size() / maxSize * 100);
+			final int percentDone = maxSize == 0 ? 0 : (int) ((float) topicUpdateDetails.size() / maxSize * 100);
 			display.getProgress().setPercentDone(percentDone);
-			
+
 			final TopicUpdateData data = topicUpdateDetails.remove(0);
 
 			final RemoteCallback<RESTTopicV1> successCallback = new RemoteCallback<RESTTopicV1>()
@@ -422,14 +429,29 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 					data.getNewTopic().cloneInto(data.getOldTopic(), false);
 
+					final List<ImageReplacementDetails> topicImageReplacements = imageReplacements.get(data.getOldTopic());
+
 					/* The image has been replaced, so remove it from the list */
 					for (final ImageReplacementDetails imgReplace : data.getProcessedImages())
 					{
-						imageReplacements.get(data.getOldTopic()).remove(imgReplace);
+						/*
+						 * Find any image replacements that need to be cleaned up based on the file reference attribute. This deals with the situation where
+						 * multiple images could be used to update a single reference.
+						 */
+						final List<ImageReplacementDetails> removeList = new ArrayList<ImageReplacementDetails>();
+
+						for (final ImageReplacementDetails topicImageReplacement : topicImageReplacements)
+						{
+							if (topicImageReplacement.getFileRef().equals(imgReplace.getFileRef()))
+								removeList.add(topicImageReplacement);
+						}
+
+						for (final ImageReplacementDetails remove : removeList)
+							topicImageReplacements.remove(remove);
 					}
 
 					/* If that was the last image to be replaced, remove the image from the list */
-					if (imageReplacements.get(data.getOldTopic()).size() == 0)
+					if (topicImageReplacements.size() == 0)
 					{
 						imageReplacements.remove(data.getOldTopic());
 						updateTopicList();
@@ -492,32 +514,6 @@ public class BulkImageUpdaterPresenter implements Presenter
 			}
 		}
 		catch (final NumberFormatException ex)
-		{
-
-		}
-
-		return null;
-	}
-
-	/**
-	 * @param index
-	 *            The index in the listbox that represents the topic
-	 * @return The topic that is represented by the supplied index
-	 */
-	private RESTTopicV1 getTopicFromIndex(final int index)
-	{
-		try
-		{
-			final Integer topicID = Integer.parseInt(display.getTopicMatches().getValue(index));
-
-			for (final RESTTopicV1 topic : imageReplacements.keySet())
-			{
-				if (topicID.equals(topic.getId()))
-					return topic;
-			}
-
-		}
-		catch (final Exception ex)
 		{
 
 		}
@@ -716,9 +712,9 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 										if (!imageReplacements.containsKey(topic))
 											imageReplacements.put(topic, new ArrayList<ImageReplacementDetails>());
-										
+
 										final List<ImageReplacementDetails> existingReplacements = imageReplacements.get(topic);
-										
+
 										/* Deal with the situation where the same image is referenced multiple times in the topic's xml */
 										boolean alreadyFound = false;
 										for (final ImageReplacementDetails imgReplacement : existingReplacements)
@@ -777,7 +773,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 		display.getUpdateImage().setEnabled(enabled && display.getImageMatches().getSelectedIndex() != -1 && display.getTopicMatches().getSelectedIndex() != -1);
 		display.getUpdateTopic().setEnabled(enabled && display.getTopicMatches().getSelectedIndex() != -1);
-		display.getBulkUpdate().setEnabled(enabled);
+		display.getBulkUpdate().setEnabled(enabled && this.imageReplacements.size() != 0);
 	}
 
 	@Override
