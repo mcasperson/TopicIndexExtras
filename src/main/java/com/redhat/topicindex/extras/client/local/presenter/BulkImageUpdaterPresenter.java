@@ -85,17 +85,17 @@ public class BulkImageUpdaterPresenter implements Presenter
 	/** Images expansion string */
 	private static final String IMAGES_EXPAND = "{\"branches\":[{\"trunk\":{\"name\":\"images\"},\"branches\":[{\"trunk\":{\"name\":\"languageimages\"}}]}]}";
 
+	/** A Regex used to find image file references in a topic's xml */
 	private static final String IMAGEDATAS_FILEREF_RE = "<imagedata.+?fileref=\"(.+?)\"";
 	private static final RegExp IMAGEDATAS_FILEREF_REGEXP = RegExp.compile(IMAGEDATAS_FILEREF_RE, "g");
 
+	/** A Regex that can be used to match the important components of a Skynet serach URL */
 	// private static final String SEARCH_URL_RE = "^http://(.*?)(:\\d+)?/TopicIndex/CustomSearchTopicList.seam([?].*?)(&cid=\\d+)?$";
 	// private static final RegExp SEARCH_URL_RE_REGEXP = RegExp.compile(SEARCH_URL_RE);
 
 	public interface Display
 	{
 		TextArea getXml();
-
-		Button getBulkUpdate();
 
 		Progressbar getProgress();
 
@@ -107,8 +107,6 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 		ListBox getImageMatches();
 
-		Button getUpdate();
-
 		TextArea getLog();
 
 		Widget asWidget();
@@ -116,6 +114,8 @@ public class BulkImageUpdaterPresenter implements Presenter
 		Button getUpdateTopic();
 
 		Button getUpdateImage();
+		
+		Button getBulkUpdate();
 	}
 
 	@Inject
@@ -124,6 +124,9 @@ public class BulkImageUpdaterPresenter implements Presenter
 	private Map<RESTTopicV1, List<ImageReplacementDetails>> imageReplacements;
 	private StringBuilder log;
 
+	/**
+	 * Add event listeners to the UI elements
+	 */
 	public void bind()
 	{
 		display.getBulkUpdate().addClickHandler(new ClickHandler()
@@ -227,6 +230,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 			@Override
 			public void onChange(final ChangeEvent event)
 			{
+				enableUI(true);
 				updateImageList();
 			}
 		});
@@ -236,6 +240,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 			@Override
 			public void onChange(final ChangeEvent event)
 			{
+				enableUI(true);
 				final RESTTopicV1 topic = getSelectedTopic();
 				final ImageReplacementDetails imgReplace = getSelectedImageReplacementDetails();
 				if (imgReplace != null && topic != null)
@@ -255,7 +260,6 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 		display.getImageMatches().addDoubleClickHandler(new DoubleClickHandler()
 		{
-
 			@Override
 			public void onDoubleClick(DoubleClickEvent event)
 			{
@@ -269,6 +273,10 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 	}
 
+	/**
+	 * Update any unambiguous image references for the given topic
+	 * @param topic The topic to be updated
+	 */
 	private void updateAllOneToOneImages(final RESTTopicV1 topic)
 	{
 		if (imageReplacements.containsKey(topic))
@@ -312,6 +320,9 @@ public class BulkImageUpdaterPresenter implements Presenter
 		}
 	}
 
+	/**
+	 * Update the list of topics displayed in the list box
+	 */
 	private void updateTopicList()
 	{
 		display.getTopicMatches().clear();
@@ -325,6 +336,9 @@ public class BulkImageUpdaterPresenter implements Presenter
 		}
 	}
 
+	/**
+	 * Update the list of image replacements displayed in the list box
+	 */
 	private void updateImageList()
 	{
 		try
@@ -417,6 +431,10 @@ public class BulkImageUpdaterPresenter implements Presenter
 		}
 	}
 
+	/** 
+	 * Get the topic that is represented by the selected item in the list box
+	 * @return the selected topic, or null if no selection could be matched
+	 */
 	private RESTTopicV1 getSelectedTopic()
 	{
 		try
@@ -440,6 +458,10 @@ public class BulkImageUpdaterPresenter implements Presenter
 		return null;
 	}
 
+	/** 
+	 * Get the image replacement image data object that is represented by the selected item in the list box
+	 * @return the selected replacement image data object, or null if no selection could be matched
+	 */
 	private ImageReplacementDetails getSelectedImageReplacementDetails()
 	{
 		try
@@ -467,6 +489,9 @@ public class BulkImageUpdaterPresenter implements Presenter
 		return null;
 	}
 
+	/**
+	 * Get a list of topics from the server
+	 */
 	private void getTopics()
 	{
 		final RemoteCallback<RESTTopicCollectionV1> successCallback = new RemoteCallback<RESTTopicCollectionV1>()
@@ -523,6 +548,10 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 	}
 
+	/**
+	 * Get a list of images from the server
+	 * @param topics The previously fetched collection of topics
+	 */
 	private void getImages(final RESTTopicCollectionV1 topics)
 	{
 		final RemoteCallback<RESTImageCollectionV1> successCallback = new RemoteCallback<RESTImageCollectionV1>()
@@ -565,6 +594,11 @@ public class BulkImageUpdaterPresenter implements Presenter
 		}
 	}
 
+	/**
+	 * Match the images to the image references in the topics' xml
+	 * @param topics The collection of topics
+	 * @param images The collection of images
+	 */
 	private void processImagesAndTopics(final RESTTopicCollectionV1 topics, final RESTImageCollectionV1 images)
 	{
 		imageReplacements = new HashMap<RESTTopicV1, List<ImageReplacementDetails>>();
@@ -628,7 +662,10 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 	private void done()
 	{
-		display.getLog().setText(log.toString());
+		final String logString = log.toString();
+		display.getLog().setText(logString);
+		/* Scroll to the bottom */
+		display.getLog().setSelectionRange(logString.length(), 0);
 		enableUI(true);
 	}
 
@@ -648,10 +685,12 @@ public class BulkImageUpdaterPresenter implements Presenter
 		display.getLog().setEnabled(enabled);
 		display.getProgress().setVisible(!enabled);
 		display.getTopicMatches().setEnabled(enabled);
-		display.getTopicSearch().setEnabled(enabled);
-		display.getUpdate().setEnabled(enabled);
+		display.getTopicSearch().setEnabled(enabled);		
 		display.getXml().setEnabled(enabled);
-		display.getUpdateTopic().setEnabled(enabled);
+		
+		display.getUpdateImage().setEnabled(enabled && display.getImageMatches().getSelectedIndex() != -1 && display.getTopicMatches().getSelectedIndex() != -1);
+		display.getUpdateTopic().setEnabled(enabled && display.getTopicMatches().getSelectedIndex() != -1);
+		display.getBulkUpdate().setEnabled(enabled);
 	}
 
 	@Override
