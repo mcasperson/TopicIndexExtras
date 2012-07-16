@@ -137,36 +137,7 @@ public class BootstrapperImpl implements Bootstrapper {
       }
     };
     final RequestDispatcherProvider inj2109_RequestDispatcherProvider = inj2124_RequestDispatcherProvider_creationalCallback.getInstance(context);
-    final CreationalCallback<BulkImageUpdaterView> inj2127_BulkImageUpdaterView_creationalCallback = new CreationalCallback<BulkImageUpdaterView>() {
-      public BulkImageUpdaterView getInstance(final CreationalContext context) {
-        Class beanType = BulkImageUpdaterView.class;
-        Annotation[] qualifiers = new Annotation[] { new Any() {
-            public Class annotationType() {
-              return Any.class;
-            }
-        } };
-        final BulkImageUpdaterView inj1878_BulkImageUpdaterView = new BulkImageUpdaterView();
-        BeanRef beanRef = context.getBeanReference(beanType, qualifiers);
-        context.addBean(beanRef, inj1878_BulkImageUpdaterView);
-        return inj1878_BulkImageUpdaterView;
-      }
-    };
-    final CreationalCallback<BulkImageUpdaterPresenter> inj2126_BulkImageUpdaterPresenter_creationalCallback = new CreationalCallback<BulkImageUpdaterPresenter>() {
-      public BulkImageUpdaterPresenter getInstance(final CreationalContext context) {
-        Class beanType = BulkImageUpdaterPresenter.class;
-        Annotation[] qualifiers = new Annotation[] { new Any() {
-            public Class annotationType() {
-              return Any.class;
-            }
-        } };
-        final BulkImageUpdaterPresenter inj2125_BulkImageUpdaterPresenter = new BulkImageUpdaterPresenter();
-        BeanRef beanRef = context.getBeanReference(beanType, qualifiers);
-        context.addBean(beanRef, inj2125_BulkImageUpdaterPresenter);
-        com_redhat_topicindex_extras_client_local_presenter_BulkImageUpdaterPresenter_display(inj2125_BulkImageUpdaterPresenter, inj2127_BulkImageUpdaterView_creationalCallback.getInstance(context));
-        return inj2125_BulkImageUpdaterPresenter;
-      }
-    };
-    final CreationalCallback<MessageBusProvider> inj2128_MessageBusProvider_creationalCallback = new CreationalCallback<MessageBusProvider>() {
+    final CreationalCallback<MessageBusProvider> inj2125_MessageBusProvider_creationalCallback = new CreationalCallback<MessageBusProvider>() {
       public MessageBusProvider getInstance(final CreationalContext context) {
         Class beanType = MessageBusProvider.class;
         Annotation[] qualifiers = new Annotation[] { new Any() {
@@ -180,8 +151,8 @@ public class BootstrapperImpl implements Bootstrapper {
         return inj2115_MessageBusProvider;
       }
     };
-    final MessageBusProvider inj2115_MessageBusProvider = inj2128_MessageBusProvider_creationalCallback.getInstance(context);
-    final CreationalCallback<IOCBeanManagerProvider> inj2129_IOCBeanManagerProvider_creationalCallback = new CreationalCallback<IOCBeanManagerProvider>() {
+    final MessageBusProvider inj2115_MessageBusProvider = inj2125_MessageBusProvider_creationalCallback.getInstance(context);
+    final CreationalCallback<IOCBeanManagerProvider> inj2126_IOCBeanManagerProvider_creationalCallback = new CreationalCallback<IOCBeanManagerProvider>() {
       public IOCBeanManagerProvider getInstance(final CreationalContext context) {
         Class beanType = IOCBeanManagerProvider.class;
         Annotation[] qualifiers = new Annotation[] { new Any() {
@@ -195,7 +166,36 @@ public class BootstrapperImpl implements Bootstrapper {
         return inj2117_IOCBeanManagerProvider;
       }
     };
-    final IOCBeanManagerProvider inj2117_IOCBeanManagerProvider = inj2129_IOCBeanManagerProvider_creationalCallback.getInstance(context);
+    final IOCBeanManagerProvider inj2117_IOCBeanManagerProvider = inj2126_IOCBeanManagerProvider_creationalCallback.getInstance(context);
+    final CreationalCallback<BulkImageUpdaterView> inj2129_BulkImageUpdaterView_creationalCallback = new CreationalCallback<BulkImageUpdaterView>() {
+      public BulkImageUpdaterView getInstance(final CreationalContext context) {
+        Class beanType = BulkImageUpdaterView.class;
+        Annotation[] qualifiers = new Annotation[] { new Any() {
+            public Class annotationType() {
+              return Any.class;
+            }
+        } };
+        final BulkImageUpdaterView inj1878_BulkImageUpdaterView = new BulkImageUpdaterView();
+        BeanRef beanRef = context.getBeanReference(beanType, qualifiers);
+        context.addBean(beanRef, inj1878_BulkImageUpdaterView);
+        return inj1878_BulkImageUpdaterView;
+      }
+    };
+    final CreationalCallback<BulkImageUpdaterPresenter> inj2128_BulkImageUpdaterPresenter_creationalCallback = new CreationalCallback<BulkImageUpdaterPresenter>() {
+      public BulkImageUpdaterPresenter getInstance(final CreationalContext context) {
+        Class beanType = BulkImageUpdaterPresenter.class;
+        Annotation[] qualifiers = new Annotation[] { new Any() {
+            public Class annotationType() {
+              return Any.class;
+            }
+        } };
+        final BulkImageUpdaterPresenter inj2127_BulkImageUpdaterPresenter = new BulkImageUpdaterPresenter();
+        BeanRef beanRef = context.getBeanReference(beanType, qualifiers);
+        context.addBean(beanRef, inj2127_BulkImageUpdaterPresenter);
+        com_redhat_topicindex_extras_client_local_presenter_BulkImageUpdaterPresenter_display(inj2127_BulkImageUpdaterPresenter, inj2129_BulkImageUpdaterView_creationalCallback.getInstance(context));
+        return inj2127_BulkImageUpdaterPresenter;
+      }
+    };
     final CreationalCallback<EventProvider> inj2130_EventProvider_creationalCallback = new CreationalCallback<EventProvider>() {
       public EventProvider getInstance(final CreationalContext context) {
         Class beanType = EventProvider.class;
@@ -418,21 +418,21 @@ public class BootstrapperImpl implements Bootstrapper {
     };
     injContext.addBean(RequestDispatcherProvider.class, inj2124_RequestDispatcherProvider_creationalCallback, inj2109_RequestDispatcherProvider, BuiltInQualifiers.DEFAULT_QUALIFIERS);
     injContext.addBean(Provider.class, inj2124_RequestDispatcherProvider_creationalCallback, inj2109_RequestDispatcherProvider, BuiltInQualifiers.DEFAULT_QUALIFIERS);
-    injContext.addBean(BulkImageUpdaterView.class, inj2127_BulkImageUpdaterView_creationalCallback, null, BuiltInQualifiers.DEFAULT_QUALIFIERS);
-    injContext.addBean(com.redhat.topicindex.extras.client.local.presenter.BulkImageUpdaterPresenter.Display.class, inj2127_BulkImageUpdaterView_creationalCallback, null, BuiltInQualifiers.DEFAULT_QUALIFIERS);
-    injContext.addBean(Composite.class, inj2127_BulkImageUpdaterView_creationalCallback, null, BuiltInQualifiers.DEFAULT_QUALIFIERS);
-    injContext.addBean(IsRenderable.class, inj2127_BulkImageUpdaterView_creationalCallback, null, BuiltInQualifiers.DEFAULT_QUALIFIERS);
-    injContext.addBean(EventListener.class, inj2127_BulkImageUpdaterView_creationalCallback, null, BuiltInQualifiers.DEFAULT_QUALIFIERS);
-    injContext.addBean(HasAttachHandlers.class, inj2127_BulkImageUpdaterView_creationalCallback, null, BuiltInQualifiers.DEFAULT_QUALIFIERS);
-    injContext.addBean(IsWidget.class, inj2127_BulkImageUpdaterView_creationalCallback, null, BuiltInQualifiers.DEFAULT_QUALIFIERS);
-    injContext.addBean(UIObject.class, inj2127_BulkImageUpdaterView_creationalCallback, null, BuiltInQualifiers.DEFAULT_QUALIFIERS);
-    injContext.addBean(HasVisibility.class, inj2127_BulkImageUpdaterView_creationalCallback, null, BuiltInQualifiers.DEFAULT_QUALIFIERS);
-    injContext.addBean(BulkImageUpdaterPresenter.class, inj2126_BulkImageUpdaterPresenter_creationalCallback, null, BuiltInQualifiers.DEFAULT_QUALIFIERS);
-    injContext.addBean(Presenter.class, inj2126_BulkImageUpdaterPresenter_creationalCallback, null, BuiltInQualifiers.DEFAULT_QUALIFIERS);
-    injContext.addBean(MessageBusProvider.class, inj2128_MessageBusProvider_creationalCallback, inj2115_MessageBusProvider, BuiltInQualifiers.DEFAULT_QUALIFIERS);
-    injContext.addBean(Provider.class, inj2128_MessageBusProvider_creationalCallback, inj2115_MessageBusProvider, BuiltInQualifiers.DEFAULT_QUALIFIERS);
-    injContext.addBean(IOCBeanManagerProvider.class, inj2129_IOCBeanManagerProvider_creationalCallback, inj2117_IOCBeanManagerProvider, BuiltInQualifiers.DEFAULT_QUALIFIERS);
-    injContext.addBean(Provider.class, inj2129_IOCBeanManagerProvider_creationalCallback, inj2117_IOCBeanManagerProvider, BuiltInQualifiers.DEFAULT_QUALIFIERS);
+    injContext.addBean(MessageBusProvider.class, inj2125_MessageBusProvider_creationalCallback, inj2115_MessageBusProvider, BuiltInQualifiers.DEFAULT_QUALIFIERS);
+    injContext.addBean(Provider.class, inj2125_MessageBusProvider_creationalCallback, inj2115_MessageBusProvider, BuiltInQualifiers.DEFAULT_QUALIFIERS);
+    injContext.addBean(IOCBeanManagerProvider.class, inj2126_IOCBeanManagerProvider_creationalCallback, inj2117_IOCBeanManagerProvider, BuiltInQualifiers.DEFAULT_QUALIFIERS);
+    injContext.addBean(Provider.class, inj2126_IOCBeanManagerProvider_creationalCallback, inj2117_IOCBeanManagerProvider, BuiltInQualifiers.DEFAULT_QUALIFIERS);
+    injContext.addBean(BulkImageUpdaterView.class, inj2129_BulkImageUpdaterView_creationalCallback, null, BuiltInQualifiers.DEFAULT_QUALIFIERS);
+    injContext.addBean(com.redhat.topicindex.extras.client.local.presenter.BulkImageUpdaterPresenter.Display.class, inj2129_BulkImageUpdaterView_creationalCallback, null, BuiltInQualifiers.DEFAULT_QUALIFIERS);
+    injContext.addBean(Composite.class, inj2129_BulkImageUpdaterView_creationalCallback, null, BuiltInQualifiers.DEFAULT_QUALIFIERS);
+    injContext.addBean(IsRenderable.class, inj2129_BulkImageUpdaterView_creationalCallback, null, BuiltInQualifiers.DEFAULT_QUALIFIERS);
+    injContext.addBean(EventListener.class, inj2129_BulkImageUpdaterView_creationalCallback, null, BuiltInQualifiers.DEFAULT_QUALIFIERS);
+    injContext.addBean(HasAttachHandlers.class, inj2129_BulkImageUpdaterView_creationalCallback, null, BuiltInQualifiers.DEFAULT_QUALIFIERS);
+    injContext.addBean(IsWidget.class, inj2129_BulkImageUpdaterView_creationalCallback, null, BuiltInQualifiers.DEFAULT_QUALIFIERS);
+    injContext.addBean(UIObject.class, inj2129_BulkImageUpdaterView_creationalCallback, null, BuiltInQualifiers.DEFAULT_QUALIFIERS);
+    injContext.addBean(HasVisibility.class, inj2129_BulkImageUpdaterView_creationalCallback, null, BuiltInQualifiers.DEFAULT_QUALIFIERS);
+    injContext.addBean(BulkImageUpdaterPresenter.class, inj2128_BulkImageUpdaterPresenter_creationalCallback, null, BuiltInQualifiers.DEFAULT_QUALIFIERS);
+    injContext.addBean(Presenter.class, inj2128_BulkImageUpdaterPresenter_creationalCallback, null, BuiltInQualifiers.DEFAULT_QUALIFIERS);
     injContext.addBean(EventProvider.class, inj2130_EventProvider_creationalCallback, inj2119_EventProvider, BuiltInQualifiers.DEFAULT_QUALIFIERS);
     injContext.addBean(ContextualTypeProvider.class, inj2130_EventProvider_creationalCallback, inj2119_EventProvider, BuiltInQualifiers.DEFAULT_QUALIFIERS);
     injContext.addBean(App.class, inj2131_App_creationalCallback, inj1819_App, BuiltInQualifiers.DEFAULT_QUALIFIERS);

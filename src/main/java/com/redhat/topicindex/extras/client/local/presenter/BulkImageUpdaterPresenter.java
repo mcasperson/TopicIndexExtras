@@ -400,11 +400,14 @@ public class BulkImageUpdaterPresenter implements Presenter
 	{
 		if (topicUpdateDetails.size() == 0)
 		{
+			updateTopicList();
+			updateImageList();
 			done();
 		}
 		else
 		{
-			final int percentDone = (int)((float)topicUpdateDetails.size() / maxSize * 100);
+			/* deal with a possible div by 0 */
+			final int percentDone = maxSize == 0 ? 0 : (int)((float)topicUpdateDetails.size() / maxSize * 100);
 			display.getProgress().setPercentDone(percentDone);
 			
 			final TopicUpdateData data = topicUpdateDetails.remove(0);
@@ -432,9 +435,6 @@ public class BulkImageUpdaterPresenter implements Presenter
 						updateTopicList();
 					}
 
-					updateImageList();
-
-					topicUpdateDetails.remove(0);
 					updateTopic(topicUpdateDetails, maxSize);
 				}
 			};
@@ -447,7 +447,6 @@ public class BulkImageUpdaterPresenter implements Presenter
 					final String error = "ERROR! REST call to update topic failed with a HTTP error.\nMessage: " + message + "\nException:  " + throwable.toString();
 					log.append(error + "\n");
 
-					topicUpdateDetails.remove(0);
 					updateTopic(topicUpdateDetails, maxSize);
 
 					return true;
