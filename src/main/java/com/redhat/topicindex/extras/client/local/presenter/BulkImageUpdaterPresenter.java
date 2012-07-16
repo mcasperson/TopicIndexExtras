@@ -105,9 +105,9 @@ class ImageReplacementDetails
 @Dependent
 public class BulkImageUpdaterPresenter implements Presenter
 {
-	private static final String BASE_URL = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/";
+	// private static final String BASE_URL = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/";
 	// private static final String BASE_URL = "http://localhost.usersys.redhat.com:8080/TopicIndex/";
-	// private static final String BASE_URL = "http://skynet.usersys.redhat.com:8080/TopicIndex/";
+	private static final String BASE_URL = "http://skynet.usersys.redhat.com:8080/TopicIndex/";
 	
 	private static final String FILE_PATH_SPLIT_RE = "[\\\\/]";
 	private static final String FILE_EXTENSION_SPLIT_RE = "[.]";

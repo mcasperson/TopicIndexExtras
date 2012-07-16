@@ -48,8 +48,8 @@ import com.smartgwt.client.widgets.Progressbar;
 public class TopicImportPresenter implements Presenter
 {
 	// private static final String REST_SERVER = "http://localhost:8080/TopicIndex/seam/resource/rest";
-	// private static final String REST_SERVER = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
-	private static final String REST_SERVER = "http://skynet.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
+	private static final String REST_SERVER = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
+	// private static final String REST_SERVER = "http://skynet.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
 	
 	/** Regex to describe the format of the tag ids */
 	private static final String TAG_IDS_RE = "^(\\d+ )*\\d+$";

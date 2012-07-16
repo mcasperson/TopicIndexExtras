@@ -44,8 +44,8 @@ public class BulkImageUploadPresenter implements Presenter
 {
 	private static final String IMAGE_COLLECTION_EXPAND = "{\"branches\": [{\"trunk\": {\"name\": \"languageimages\"}}]}";
 	// private static final String REST_SERVER = "http://localhost:8080/TopicIndex/seam/resource/rest";
-	//private static final String REST_SERVER = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
-	private static final String REST_SERVER = "http://skynet.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
+	private static final String REST_SERVER = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
+	// private static final String REST_SERVER = "http://skynet.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
 	
 	//@Inject
 	//private HandlerManager eventBus;
