@@ -122,6 +122,24 @@ public class BulkImageUploadPresenter implements Presenter
 				}
 			}
 		});
+		
+		for (final ImageUploadData imageUploadData : display.getImageUploadBlocks())
+		{
+		    imageUploadData.getUpload().addChangeHandler(new ChangeHandler()
+            {
+                @Override
+                public void onChange(final ChangeEvent event)
+                {
+                    final FileList files = imageUploadData.getUpload().getFiles();
+                    final StringBuilder text = new StringBuilder();
+                    for (final File file : files)
+                    {
+                        text.append(file.getName() + "\n");
+                    }
+                    imageUploadData.getFileList().setText(text.toString());
+                }
+            });
+		}
 	}
 	
 	private List<String> getUniqueFileNames()
