@@ -11,7 +11,14 @@ import javax.inject.Inject;
 import org.jboss.errai.bus.client.api.ErrorCallback;
 import org.jboss.errai.bus.client.api.Message;
 import org.jboss.errai.bus.client.api.RemoteCallback;
+import org.jboss.errai.enterprise.client.jaxrs.api.PathSegmentImpl;
 import org.jboss.errai.enterprise.client.jaxrs.api.RestClient;
+import org.jboss.pressgang.ccms.rest.v1.collections.RESTImageCollectionV1;
+import org.jboss.pressgang.ccms.rest.v1.collections.RESTTopicCollectionV1;
+import org.jboss.pressgang.ccms.rest.v1.entities.RESTImageV1;
+import org.jboss.pressgang.ccms.rest.v1.entities.RESTLanguageImageV1;
+import org.jboss.pressgang.ccms.rest.v1.entities.RESTTopicV1;
+import org.jboss.pressgang.ccms.rest.v1.jaxrsinterfaces.RESTInterfaceV1;
 
 import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
@@ -29,12 +36,6 @@ import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
 import com.redhat.topicindex.extras.client.local.Presenter;
-import com.redhat.topicindex.extras.client.local.RESTInterfaceV1;
-import com.redhat.topicindex.rest.collections.RESTImageCollectionV1;
-import com.redhat.topicindex.rest.collections.RESTTopicCollectionV1;
-import com.redhat.topicindex.rest.entities.interfaces.RESTImageV1;
-import com.redhat.topicindex.rest.entities.interfaces.RESTLanguageImageV1;
-import com.redhat.topicindex.rest.entities.interfaces.RESTTopicV1;
 import com.smartgwt.client.widgets.Progressbar;
 
 class TopicUpdateData
@@ -195,7 +196,9 @@ public class BulkImageUpdaterPresenter implements Presenter
 				final RESTTopicV1 topic = getSelectedTopic();
 				updateAllOneToOneImages(new ArrayList<RESTTopicV1>()
 				{
-					{
+                    private static final long serialVersionUID = 7565115993475688359L;
+
+                    {
 						add(topic);
 					}
 				});
@@ -223,10 +226,14 @@ public class BulkImageUpdaterPresenter implements Presenter
 					log.append("Topic " + topic.getId() + " had 1 image reference updated.\n");
 					updateTopic(new ArrayList<TopicUpdateData>()
 					{
-						{
+                        private static final long serialVersionUID = 1205682726364821334L;
+
+                        {
 							add(new TopicUpdateData(topic, newTopic, new ArrayList<ImageReplacementDetails>()
 							{
-								{
+                                private static final long serialVersionUID = 6348834715977290889L;
+
+                                {
 									add(imgReplace);
 								}
 							}));
@@ -629,7 +636,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 
 			System.out.println("Getting Topics from REST interface");
 
-			restMethod.getJSONTopicsWithQuery(tagId, PROPERTY_TAG_EXPAND);
+			restMethod.getJSONTopicsWithQuery(new PathSegmentImpl("query;tag" + tagId + "=1;"), PROPERTY_TAG_EXPAND);
 		}
 		catch (final Exception ex)
 		{
@@ -700,7 +707,8 @@ public class BulkImageUpdaterPresenter implements Presenter
 	{
 		imageReplacements = new HashMap<RESTTopicV1, List<ImageReplacementDetails>>();
 
-		for (final RESTTopicV1 topic : topics.getItems())
+		final List<RESTTopicV1> topicItems = topics.returnItems();
+		for (final RESTTopicV1 topic : topicItems)
 		{
 			/* Get the results for all the images and their filerefs */
 
@@ -715,10 +723,12 @@ public class BulkImageUpdaterPresenter implements Presenter
 					final String fileName = fileRefPathCompnents[fileRefPathCompnents.length - 1];
 
 					/* Loop over all the images */
-					for (final RESTImageV1 image : images.getItems())
+					final List<RESTImageV1> imageItems = images.returnItems();
+					for (final RESTImageV1 image : imageItems)
 					{
 						/* Loop over all the image locales */
-						for (final RESTLanguageImageV1 langImage : image.getLanguageImages_OTM().getItems())
+					    final List<RESTLanguageImageV1> langImages = image.getLanguageImages_OTM().returnItems();
+						for (final RESTLanguageImageV1 langImage : langImages)
 						{
 							/* Find a matching locale */
 							if (langImage.getLocale().equals(topic.getLocale()))

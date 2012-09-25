@@ -6,7 +6,15 @@ import java.util.List;
 import org.jboss.errai.bus.client.api.ErrorCallback;
 import org.jboss.errai.bus.client.api.Message;
 import org.jboss.errai.bus.client.api.RemoteCallback;
+import org.jboss.errai.enterprise.client.jaxrs.api.PathSegmentImpl;
 import org.jboss.errai.enterprise.client.jaxrs.api.RestClient;
+import org.jboss.pressgang.ccms.rest.v1.collections.RESTTagCollectionV1;
+import org.jboss.pressgang.ccms.rest.v1.collections.RESTTopicCollectionV1;
+import org.jboss.pressgang.ccms.rest.v1.collections.join.RESTAssignedPropertyTagCollectionV1;
+import org.jboss.pressgang.ccms.rest.v1.entities.RESTTagV1;
+import org.jboss.pressgang.ccms.rest.v1.entities.RESTTopicV1;
+import org.jboss.pressgang.ccms.rest.v1.entities.join.RESTAssignedPropertyTagV1;
+import org.jboss.pressgang.ccms.rest.v1.jaxrsinterfaces.RESTInterfaceV1;
 import org.vectomatic.file.File;
 import org.vectomatic.file.FileReader;
 import org.vectomatic.file.FileUploadExt;
@@ -18,7 +26,6 @@ import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.event.shared.HandlerManager;
 import com.google.gwt.http.client.URL;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.HasWidgets;
@@ -34,14 +41,7 @@ import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 
 import com.redhat.topicindex.extras.client.local.Presenter;
-import com.redhat.topicindex.extras.client.local.RESTInterfaceV1;
 import com.redhat.topicindex.extras.client.local.exceptions.InputFormatException;
-import com.redhat.topicindex.rest.collections.RESTPropertyTagCollectionV1;
-import com.redhat.topicindex.rest.collections.RESTTagCollectionV1;
-import com.redhat.topicindex.rest.collections.RESTTopicCollectionV1;
-import com.redhat.topicindex.rest.entities.interfaces.RESTPropertyTagV1;
-import com.redhat.topicindex.rest.entities.interfaces.RESTTagV1;
-import com.redhat.topicindex.rest.entities.interfaces.RESTTopicV1;
 import com.smartgwt.client.widgets.Progressbar;
 
 @Dependent
@@ -500,7 +500,7 @@ public class TopicImportPresenter implements Presenter
 				final int size = topics.getItems().size();
 
 				final RESTTopicV1 newTopic = new RESTTopicV1();
-				newTopic.explicitSetProperties(new RESTPropertyTagCollectionV1());
+				newTopic.explicitSetProperties(new RESTAssignedPropertyTagCollectionV1());
 				newTopic.explicitSetTags(new RESTTagCollectionV1());
 
 				if (size == 0)
@@ -509,11 +509,13 @@ public class TopicImportPresenter implements Presenter
 				}
 				else if (size > 0)
 				{
-					RESTTopicV1 existingTopic = topics.getItems().get(0);
+					RESTTopicV1 existingTopic = topics.returnItems().get(0);
 
+					final List<RESTAssignedPropertyTagV1> propertyTags = existingTopic.getProperties().returnItems();
+					
 					/* Make sure the query actually returned a valid topic. We don't want to overwrite an existing topic based on a bad query. */
-					boolean foundOriginalFileNameTag = false;
-					for (final RESTPropertyTagV1 propTag : existingTopic.getProperties().getItems())
+                    boolean foundOriginalFileNameTag = false;
+					for (final RESTAssignedPropertyTagV1 propTag : propertyTags)
 					{
 						if (ORIGINAL_FILE_NAME_PROPERTY_TAG_ID.equals(propTag.getId()) && originalFileName.equals(propTag.getValue()))
 						{
@@ -531,24 +533,23 @@ public class TopicImportPresenter implements Presenter
 						 * is processed again.
 						 */
 
-						for (final RESTPropertyTagV1 propTag : existingTopic.getProperties().getItems())
+						for (final RESTAssignedPropertyTagV1 propTag : propertyTags)
 						{
-							final RESTPropertyTagV1 newTag = new RESTPropertyTagV1();
-							newTag.setRemoveItem(true);
+							final RESTAssignedPropertyTagV1 newTag = new RESTAssignedPropertyTagV1();
 							newTag.setId(propTag.getId());
 							newTag.setValue(propTag.getValue());
 
-							newTopic.getProperties().addItem(newTag);
+							newTopic.getProperties().addRemoveItem(newTag);
 						}
 						
 						/* Do the same with the tags */
-						for (final RESTTagV1 tag : existingTopic.getTags().getItems())
+						final List<RESTTagV1> tags = existingTopic.getTags().returnItems();
+						for (final RESTTagV1 tag : tags)
 						{
 							final RESTTagV1 removeTag = new RESTTagV1();
 							removeTag.setId(tag.getId());
-							removeTag.setRemoveItem(true);
 							
-							newTopic.getTags().addItem(removeTag);
+							newTopic.getTags().addRemoveItem(removeTag);
 						}
 
 						if (size > 1)
@@ -581,8 +582,8 @@ public class TopicImportPresenter implements Presenter
 
 		try
 		{
-			// final String query = "query;propertyTag" + ORIGINAL_FILE_NAME_PROPERTY_TAG_ID + "=" + URL.encodePathSegment(originalFileName);
-			restMethod.getJSONTopicsWithQuery(ORIGINAL_FILE_NAME_PROPERTY_TAG_ID, originalFileName, PROPERTY_TAG_EXPAND);
+			final String query = "query;propertyTag" + ORIGINAL_FILE_NAME_PROPERTY_TAG_ID + "=" + URL.encodePathSegment(originalFileName);
+			restMethod.getJSONTopicsWithQuery(new PathSegmentImpl(query), PROPERTY_TAG_EXPAND);
 		}
 		catch (final Exception ex)
 		{
@@ -627,29 +628,26 @@ public class TopicImportPresenter implements Presenter
 			/* Add the errors as property tags */
 			for (final String err : error)
 			{
-				final RESTPropertyTagV1 propTag = new RESTPropertyTagV1();
+				final RESTAssignedPropertyTagV1 propTag = new RESTAssignedPropertyTagV1();
 				propTag.setId(TOPIC_IMPORT_ERRORS_PROPERTY_TAG_ID);
 				propTag.setValue(err);
-				propTag.setAddItem(true);
 
-				topic.getProperties().addItem(propTag);
+				topic.getProperties().addNewItem(propTag);
 			}
 
 			/* Add the original file name as a property tag */
 			final String originalFileName = display.getFileNamePrefix().getValue() + file.getName();
-			final RESTPropertyTagV1 propTag = new RESTPropertyTagV1();
+			final RESTAssignedPropertyTagV1 propTag = new RESTAssignedPropertyTagV1();
 			propTag.setId(ORIGINAL_FILE_NAME_PROPERTY_TAG_ID);
 			propTag.setValue(originalFileName);
-			propTag.setAddItem(true);
-			topic.getProperties().addItem(propTag);
+			topic.getProperties().addNewItem(propTag);
 			
 			/* Add the topic tags */
 			for (final Integer tagId : tagIds)
 			{
 				final RESTTagV1 tag = new RESTTagV1();
 				tag.setId(tagId);
-				tag.setAddItem(true);
-				topic.getTags().addItem(tag);
+				topic.getTags().addNewItem(tag);
 			}			
 
 			/* If the topic id is not null, it means we found an existing topic with the same original file name. In this case, we update the existing topic. */

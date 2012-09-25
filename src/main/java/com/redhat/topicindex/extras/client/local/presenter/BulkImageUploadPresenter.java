@@ -10,6 +10,10 @@ import org.jboss.errai.bus.client.api.ErrorCallback;
 import org.jboss.errai.bus.client.api.Message;
 import org.jboss.errai.bus.client.api.RemoteCallback;
 import org.jboss.errai.enterprise.client.jaxrs.api.RestClient;
+import org.jboss.pressgang.ccms.rest.v1.collections.RESTLanguageImageCollectionV1;
+import org.jboss.pressgang.ccms.rest.v1.entities.RESTImageV1;
+import org.jboss.pressgang.ccms.rest.v1.entities.RESTLanguageImageV1;
+import org.jboss.pressgang.ccms.rest.v1.jaxrsinterfaces.RESTInterfaceV1;
 import org.vectomatic.file.File;
 import org.vectomatic.file.FileList;
 import org.vectomatic.file.FileReader;
@@ -21,7 +25,6 @@ import com.google.gwt.event.dom.client.ChangeEvent;
 import com.google.gwt.event.dom.client.ChangeHandler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.event.shared.HandlerManager;
 import com.google.gwt.user.client.ui.Button;
 import com.google.gwt.user.client.ui.HasWidgets;
 import com.google.gwt.user.client.ui.TextArea;
@@ -29,14 +32,8 @@ import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
 import com.redhat.topicindex.extras.client.local.Presenter;
-import com.redhat.topicindex.extras.client.local.RESTInterfaceV1;
 import com.redhat.topicindex.extras.client.local.utilities.GWTUtilities;
-import com.redhat.topicindex.extras.client.local.view.BulkImageUploadView;
 import com.redhat.topicindex.extras.client.local.view.ImageUploadData;
-import com.redhat.topicindex.rest.collections.RESTImageCollectionV1;
-import com.redhat.topicindex.rest.collections.RESTLanguageImageCollectionV1;
-import com.redhat.topicindex.rest.entities.interfaces.RESTImageV1;
-import com.redhat.topicindex.rest.entities.interfaces.RESTLanguageImageV1;
 import com.smartgwt.client.widgets.Progressbar;
 
 @Dependent
@@ -170,7 +167,8 @@ public class BulkImageUploadPresenter implements Presenter
 					/* output a mapping of file names to image ids */
 					if (image.getLanguageImages_OTM() != null && image.getLanguageImages_OTM().getItems() != null)
 					{
-						for (final RESTLanguageImageV1 langImage : image.getLanguageImages_OTM().getItems())
+					    final List<RESTLanguageImageV1> langImages = image.getLanguageImages_OTM().returnItems();
+						for (final RESTLanguageImageV1 langImage : langImages)
 						{
 							results.append("[" + langImage.getLocale() + "] " + image.getId() + ": " + langImage.getFilename() + "\n");
 							processRESTImage(index + 1, results, images);
@@ -265,8 +263,7 @@ public class BulkImageUploadPresenter implements Presenter
 				if (file.getName().equals(filename))
 				{
 					final RESTLanguageImageV1 langImg = new RESTLanguageImageV1();
-					langImg.setAddItem(true);
-					image.getLanguageImages_OTM().addItem(langImg);
+					image.getLanguageImages_OTM().addNewItem(langImg);
 					processLanguageImage(blockIndex, fileIndex, fileNames, results, image, file, langImg, images);
 
 					break;
@@ -292,7 +289,6 @@ public class BulkImageUploadPresenter implements Presenter
 			System.out.println("Progress [READING]: " + progressValue + "%");
 
 			final RESTImageV1 image = new RESTImageV1();
-			image.setAddItem(true);
 			image.explicitSetLanguageImages_OTM(new RESTLanguageImageCollectionV1());
 			images.add(image);
 			processBlock(0, fileIndex, fileNames, results, image, images);

@@ -7,7 +7,6 @@ import org.jboss.errai.ioc.client.container.IOCBeanManager;
 
 import com.google.gwt.event.logical.shared.ValueChangeEvent;
 import com.google.gwt.event.logical.shared.ValueChangeHandler;
-import com.google.gwt.event.shared.HandlerManager;
 import com.google.gwt.user.client.History;
 import com.google.gwt.user.client.ui.HasWidgets;
 import com.google.inject.Inject;
@@ -23,9 +22,6 @@ public class AppController implements Presenter, ValueChangeHandler<String>
 {
 	@Inject
 	private IOCBeanManager manager;
-
-	@Inject
-	private HandlerManager eventBus;
 
 	private HasWidgets container;
 
