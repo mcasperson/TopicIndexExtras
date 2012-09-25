@@ -106,9 +106,9 @@ class ImageReplacementDetails
 @Dependent
 public class BulkImageUpdaterPresenter implements Presenter
 {
-	// private static final String BASE_URL = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/";
+	private static final String BASE_URL = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/";
 	// private static final String BASE_URL = "http://localhost.usersys.redhat.com:8080/TopicIndex/";
-	private static final String BASE_URL = "http://skynet.usersys.redhat.com:8080/TopicIndex/";
+	//private static final String BASE_URL = "http://skynet.usersys.redhat.com:8080/TopicIndex/";
 	
 	private static final String FILE_PATH_SPLIT_RE = "[\\\\/]";
 	private static final String FILE_EXTENSION_SPLIT_RE = "[.]";
@@ -123,7 +123,7 @@ public class BulkImageUpdaterPresenter implements Presenter
 	private static final String TOPIC_PROPERTY_TAG_EXPAND = "{\"branches\":[{\"trunk\":{\"name\":\"properties\"}}]}";
 
 	/** Images expansion string */
-	private static final String IMAGES_EXPAND = "{\"branches\":[{\"trunk\":{\"name\":\"images\"},\"branches\":[{\"trunk\":{\"name\":\"languageimages\"}}]}]}";
+	private static final String IMAGES_EXPAND = "{\"branches\":[{\"trunk\":{\"name\":\"images\"},\"branches\":[{\"trunk\":{\"name\":\"languageImages\"}}]}]}";
 
 	/** A Regex used to find image file references in a topic's xml */
 	private static final String IMAGEDATAS_FILEREF_RE = "<imagedata.+?fileref=\"(.+?)\"";
