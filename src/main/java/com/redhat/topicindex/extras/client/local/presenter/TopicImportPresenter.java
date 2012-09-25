@@ -41,15 +41,14 @@ import javax.enterprise.context.Dependent;
 import javax.inject.Inject;
 
 import com.redhat.topicindex.extras.client.local.Presenter;
+import com.redhat.topicindex.extras.client.local.constants.Constants;
 import com.redhat.topicindex.extras.client.local.exceptions.InputFormatException;
 import com.smartgwt.client.widgets.Progressbar;
 
 @Dependent
 public class TopicImportPresenter implements Presenter
 {
-	// private static final String REST_SERVER = "http://localhost:8080/TopicIndex/seam/resource/rest";
-	private static final String REST_SERVER = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
-	// private static final String REST_SERVER = "http://skynet.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
+	private static final String REST_SERVER = Constants.BASE_URL + "seam/resource/rest";
 	
 	/** Regex to describe the format of the tag ids */
 	private static final String TAG_IDS_RE = "^(\\d+ )*\\d+$";

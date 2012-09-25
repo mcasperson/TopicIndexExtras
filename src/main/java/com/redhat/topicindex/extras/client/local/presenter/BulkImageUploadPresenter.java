@@ -32,6 +32,7 @@ import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
 import com.redhat.topicindex.extras.client.local.Presenter;
+import com.redhat.topicindex.extras.client.local.constants.Constants;
 import com.redhat.topicindex.extras.client.local.utilities.GWTUtilities;
 import com.redhat.topicindex.extras.client.local.view.ImageUploadData;
 import com.smartgwt.client.widgets.Progressbar;
@@ -40,9 +41,7 @@ import com.smartgwt.client.widgets.Progressbar;
 public class BulkImageUploadPresenter implements Presenter
 {
 	private static final String IMAGE_COLLECTION_EXPAND = "{\"branches\": [{\"trunk\": {\"name\": \"languageImages\"}}]}";
-	// private static final String REST_SERVER = "http://localhost:8080/TopicIndex/seam/resource/rest";
-	private static final String REST_SERVER = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
-	// private static final String REST_SERVER = "http://skynet.usersys.redhat.com:8080/TopicIndex/seam/resource/rest";
+	private static final String REST_SERVER = Constants.BASE_URL + "seam/resource/rest";
 	
 	//@Inject
 	//private HandlerManager eventBus;

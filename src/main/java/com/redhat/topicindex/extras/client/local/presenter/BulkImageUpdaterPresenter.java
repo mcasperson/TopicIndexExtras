@@ -36,6 +36,7 @@ import com.google.gwt.user.client.ui.TextArea;
 import com.google.gwt.user.client.ui.TextBox;
 import com.google.gwt.user.client.ui.Widget;
 import com.redhat.topicindex.extras.client.local.Presenter;
+import com.redhat.topicindex.extras.client.local.constants.Constants;
 import com.smartgwt.client.widgets.Progressbar;
 
 class TopicUpdateData
@@ -106,15 +107,11 @@ class ImageReplacementDetails
 @Dependent
 public class BulkImageUpdaterPresenter implements Presenter
 {
-	private static final String BASE_URL = "http://skynet-dev.usersys.redhat.com:8080/TopicIndex/";
-	// private static final String BASE_URL = "http://localhost.usersys.redhat.com:8080/TopicIndex/";
-	//private static final String BASE_URL = "http://skynet.usersys.redhat.com:8080/TopicIndex/";
-	
 	private static final String FILE_PATH_SPLIT_RE = "[\\\\/]";
 	private static final String FILE_EXTENSION_SPLIT_RE = "[.]";
 
-	private static final String REST_SERVER = BASE_URL + "seam/resource/rest";
-	private static final String IMAGE_VIEW_URL = BASE_URL + "ImageFile.seam?imageFileImageFileId=";
+	private static final String REST_SERVER = Constants.BASE_URL + "seam/resource/rest";
+	private static final String IMAGE_VIEW_URL = Constants.BASE_URL + "ImageFile.seam?imageFileImageFileId=";
 
 	/** Topics expansion string */
 	private static final String PROPERTY_TAG_EXPAND = "{\"branches\":[{\"trunk\":{\"name\":\"topics\"},\"branches\":[{\"trunk\":{\"name\":\"properties\"}}]}]}";
